@@ -162,6 +162,7 @@ namespace UnpackMiColorFace
                     var wdgt = lstw.Find(c => c.Id == e.TargetId);
                     var imgl = lstil.Find(c => c.Id == wdgt.TargetId);
                     var imgi = lsti.Find(c => c.Id == wdgt.TargetId);
+                    if (imgl == null && imgi == null) continue;
 
                     if (wdgt.Digits != 0)
                     {
@@ -623,6 +624,7 @@ namespace UnpackMiColorFace
 
                     uint imgSize = (uint)width * 4 * (uint)height;
                     uint arrCount = bin[1];
+                    uint maxSize = bin.GetDWord(8) + 0x0C;
 
                     List<string> nameList = new List<string>();
 
@@ -630,10 +632,20 @@ namespace UnpackMiColorFace
                     {
                         int type = 4; // (int)(bin.GetWord(0x05) / width);
 
-                        byte[] clut = null;
-                        byte[] pxls = bin.GetByteArray(0x0C + (uint)(j * imgSize), imgSize);
+                        //Console.WriteLine($"image processing: {idx}/{id:X} {dataOfs:X}/{dataLen:X} {width}x{height} {j}/{arrCount}");
 
-                        byte[] bmp = BmpHelper.ConvertToBmpGTR(pxls, (int)width, (int)height, type, clut);
+                        //if (dataOfs == 0x3CEA6C) Debugger.Break();
+
+                        uint startOffset = 0x0C + (uint)(j * imgSize);
+                        uint leftSize = (maxSize - startOffset) >= imgSize
+                            ? imgSize
+                            : maxSize - startOffset;
+
+                        byte[] pxls = bin.GetByteArray(startOffset, leftSize);
+                        byte[] pxlsFull = new byte[imgSize];
+                        Array.Copy(pxls, pxlsFull, pxls.Length);
+
+                        byte[] bmp = BmpHelper.ConvertToBmpGTR(pxlsFull, (int)width, (int)height, type, null);
 
                         string bmpFile = path + $"img_arr_{idx:D4}_{j:D2}.bmp";
                         string pngFile = path + $"img_arr_{idx:D4}_{j:D2}.png";
