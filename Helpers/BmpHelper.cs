@@ -113,6 +113,13 @@ namespace UnpackMiColorFace.Helpers
                 0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF
         };
 
+        static byte[] headerIndex8v2 = {
+                0x42, 0x4D, 0x56, 0x34, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x36, 0x04, 0x00, 0x00, 0x28, 0x00,
+                0x00, 0x00, 0x6E, 0x00, 0x00, 0x00, 0x6E, 0x00, 0x00, 0x00, 0x01, 0x00, 0x08, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xC4, 0x0E, 0x00, 0x00, 0xC4, 0x0E, 0x00, 0x00, 0x00, 0x01,
+                0x00, 0x00, 0x00, 0x01, 0x00, 0x00,
+        };
+
         public static byte[] ConvertToBmp(byte[] data, int width, int height, int type, byte[] clut = null)
         {
             int lenRaw = data.Length;
@@ -220,9 +227,66 @@ namespace UnpackMiColorFace.Helpers
             data.SetDWord(0x12, (uint)width);
             data.SetDWord(0x16, (uint)height);
 
+            return data;
+        }
+
+        internal static byte[] ConvertToBmpGTRv2(byte[] data, int width, int height, int type)
+        {
+            int lenRaw = data.Length;
+
+            byte[] header = headerIndex8v2;
+            switch (type)
+            {
+                case 4:
+                    header = headerARgb32_GTR;
+                    break;
+                case 1:
+                default:
+                    header = headerIndex8v2;
+                    break;
+            }
+
+            //lenRaw = data.Length;
+            //width = newWidth;
+            int cnt = 0x100;
+
+            if (type == 1)
+            {
+                byte count = 0;
+
+                if (count != 0)
+                    cnt = count;
+
+                int colorLen = cnt << 2;
+
+                byte[] palette = data.Take(colorLen).ToArray();
+
+                data = FlipImageData(data.Skip(colorLen).ToArray(), width, height, 1);
+                data = header.Concat(palette).Concat(data).ToArray();
+            }
+            else
+            {
+                data = FlipImageData(data, width, height, type);
+                data = header.Concat(data).ToArray();
+            }
+
+            data.SetDWord(0x02, (uint)data.Length);
+            data.SetDWord(0x12, (uint)width);
+            data.SetDWord(0x16, (uint)height);
+
+            if (type == 1)
+            {
+                data.SetDWord(0x2E, (uint)cnt);
+                data.SetDWord(0x32, (uint)cnt);
+            }
+            else
+            {
+                data.SetDWord(0x22, (uint)lenRaw);
+            }
 
             return data;
         }
+
 
         private static byte[] AlignRowData(byte[] src, int width, int height, int type)
         {
@@ -279,7 +343,7 @@ namespace UnpackMiColorFace.Helpers
             return dst;
         }
 
-        private static byte[] UncompressRLE(byte[] data, int destLen)
+        internal static byte[] UncompressRLE(byte[] data, int destLen)
         {
             uint offset = 0;
             int lenUnpacked = 0;
@@ -314,6 +378,131 @@ namespace UnpackMiColorFace.Helpers
                         // unique data
                         size = control;
                         for (int i = 0; i <= size; i++)
+                        {
+                            point = data.GetByteArray(offset, 4);
+                            dataNew.SetByteArray(lenUnpacked, point);
+                            lenUnpacked += 4;
+                            offset += 4;
+                        }
+                    }
+
+                } while (offset < data.Length);
+
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex);
+
+                Debug.WriteLine("offset: " + offset.ToString("X4"));
+                Debug.WriteLine("len: " + data.Length.ToString("X4"));
+                Debugger.Break();
+            }
+
+            return dataNew;
+        }
+
+        internal static byte[] UncompressRLEv2(byte[] data, int destLen)
+        {
+            uint offset = 0;
+            int lenUnpacked = 0;
+            byte point = 0;
+            byte[] dataNew = new byte[destLen];
+
+            try
+            {
+
+                do
+                {
+                    byte control = data[offset];
+                    offset += 1;
+
+                    //if (control == 0xFF) break;
+
+                    byte size = 0;
+                    if ((control & 0x80) == 0x00)
+                    {
+                        if (offset >= data.Length) break;
+
+                        // repeated data
+                        size = (byte)(control & 0x7F);
+                        point = data.GetByte(offset);
+                        for (int i = 0; i < size; i++)
+                        {
+                            if (lenUnpacked >= dataNew.Length)
+                                break;
+
+                            dataNew[lenUnpacked] = point;
+                            lenUnpacked += 1;
+                        }
+                        offset += 1;
+                    }
+                    else
+                    {
+                        // unique data
+                        size = (byte)(control & 0x7F);
+                        for (int i = 0; i < size; i++)
+                        {
+                            if (lenUnpacked >= dataNew.Length)
+                                break;
+
+                            point = data.GetByte(offset);
+                            dataNew[lenUnpacked] = point;
+                            lenUnpacked += 1;
+                            offset += 1;
+                        }
+                    }
+
+                } while (offset < data.Length);
+
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex);
+
+                Debug.WriteLine("offset: " + offset.ToString("X4"));
+                Debug.WriteLine("len: " + data.Length.ToString("X4"));
+                Debugger.Break();
+            }
+
+            return dataNew;
+        }
+
+        internal static byte[] UncompressRLEv1(byte[] data, int destLen)
+        {
+            uint offset = 0;
+            int lenUnpacked = 0;
+            byte[] point = null;
+            byte[] dataNew = new byte[destLen];
+
+            try
+            {
+                do
+                {
+                    byte control = data[offset];
+                    offset += 1;
+
+                    //if (control == 0xFF) break;
+
+                    byte size = 0;
+                    if ((control & 0x80) == 0x00)
+                    {
+                        if (offset >= data.Length - 4) break;
+
+                        // repeated data
+                        size = (byte)(control & 0x7F);
+                        point = data.GetByteArray(offset, 4);
+                        for (int i = 0; i < size; i++)
+                        {
+                            dataNew.SetByteArray(lenUnpacked, point);
+                            lenUnpacked += 4;
+                        }
+                        offset += 4;
+                    }
+                    else
+                    {
+                        // unique data
+                        size = (byte)(control & 0x7F);
+                        for (int i = 0; i < size; i++)
                         {
                             point = data.GetByteArray(offset, 4);
                             dataNew.SetByteArray(lenUnpacked, point);

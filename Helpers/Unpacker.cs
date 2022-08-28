@@ -85,13 +85,19 @@ namespace UnpackMiColorFace
                 uint offsetPreview = 0x20;
                 uint offset = 0xB0;
 
+                int subVersion = data.GetByte(0xAB);    // S1 Pro subversion or at location 0x04
                 int count = data.GetWord(0x1C);
 
                 ProcessPreview(data, offsetPreview, path);
 
                 for (int c = 0; c < count; c++)
                 {
-                    string imagesFolder = c == 0 ? nameNoExt + @"\images" : nameNoExt + @"\AOD\images";
+                    string imagesFolder = (c == 0
+                        ? nameNoExt + @"\images"
+                        :((c == 1)
+                            ? nameNoExt + @"\AOD\images"
+                            : nameNoExt + $@"\images_{c:D}")
+                        );
 
                     if (Directory.Exists(imagesFolder))
                         dir = new DirectoryInfo(imagesFolder);
@@ -483,19 +489,47 @@ namespace UnpackMiColorFace
             uint width = bin.GetWord(0x04);
             uint height = bin.GetWord(0x06);
 
-            int type = 4; // (int)(bin.GetWord(0x05) / width);
+            int rle = bin[0];
+            int type = bin[1];
 
+            if (bin.GetDWord(0) == 0) type = 4;
+
+            uint magic = 0;
             byte[] clut = null;
             byte[] pxls = bin.GetByteArray(0x0C, (uint)bin.Length - 0x0C);
 
-            if (type == 1)
+            magic = bin.GetDWord(0x0C);
+
+            if (magic != 0x5AA521E0)
             {
-                uint pxlsLen = 0x15 + (width * height);
-                clut = bin.GetByteArray(pxlsLen + 4, (uint)bin.Length - pxlsLen - 4);
-                pxls = bin.GetByteArray(0x0C, pxlsLen - 0x0C);
+                if (type == 1)
+                {
+                    uint pxlsLen = 0x15 + (width * height);
+                    clut = bin.GetByteArray(pxlsLen + 4, (uint)bin.Length - pxlsLen - 4);
+                    pxls = bin.GetByteArray(0x0C, pxlsLen - 0x0C);
+                }
+            }
+            else
+            {                
+                byte[] cpr = bin.GetByteArray(0xCu + 8, dataLen - 8);
+                type = bin[0x10] & 0x0F;
+                int decLen = (int)bin.GetDWord(0x10) >> 4;
+
+                if (rle == 0x10)
+                    pxls = BmpHelper.UncompressRLEv2(cpr, decLen);
+                else
+                    pxls = BmpHelper.UncompressRLEv1(cpr, decLen);
+
+                //string binFile = path + "preview.bin";
+                //File.WriteAllBytes(binFile, pxls);
             }
 
-            byte[] bmp = BmpHelper.ConvertToBmpGTR(pxls, (int)width, (int)height, type, clut);
+            byte[] bmp = null;
+                
+            if (magic == 0x5AA521E0)
+                bmp = BmpHelper.ConvertToBmpGTRv2(pxls, (int)width, (int)height, type);
+            else
+                bmp = BmpHelper.ConvertToBmpGTR(pxls, (int)width, (int)height, type, clut);
 
             string bmpFile = path + "preview.bmp";
             string pngFile = path + "preview.png";
@@ -550,19 +584,51 @@ namespace UnpackMiColorFace
                     int width = bin.GetWord(0x04);
                     int height = bin.GetWord(0x06);
 
-                    int type = 4; // (int)(bin.GetWord(0x05) / width);
+                    int rle = bin[0];
+                    int type = bin[1];
 
+                    if (bin.GetDWord(0) == 0) type = 4;
+
+                    //int type = 4; // (int)(bin.GetWord(0x05) / width);
+
+                    uint magic = bin.GetDWord(0x0C);
                     byte[] clut = null;
                     byte[] pxls = bin.GetByteArray(0x0C, (uint)bin.Length - 0x0C);
 
-                    if (type == 1)
+                    if (magic != 0x5AA521E0)
                     {
-                        uint pxlsLen = 0x15 + ((uint)width * (uint)height);
-                        clut = bin.GetByteArray(pxlsLen + 4, (uint)bin.Length - pxlsLen - 4);
-                        pxls = bin.GetByteArray(0x0C, pxlsLen - 0x0C);
+                        if (type == 1)
+                        {
+                            uint pxlsLen = 0x15 + ((uint)width * (uint)height);
+                            clut = bin.GetByteArray(pxlsLen + 4, (uint)bin.Length - pxlsLen - 4);
+                            pxls = bin.GetByteArray(0x0C, pxlsLen - 0x0C);
+                        }
+                    }
+                    else
+                    {
+                        // error in data structure size
+                        // reloading binary for correct size
+
+                        bin = data.GetByteArray(dataOfs, dataLen + 4);
+                        uint cprLen = bin.GetDWord(0x08);
+                        byte[] cpr = bin.GetByteArray(0xCu + 8, cprLen - 8);
+                        type = bin[0x10] & 0x0F;
+                        int decLen = (int)bin.GetDWord(0x10) >> 4;
+
+                        if (rle == 0x10)
+                            pxls = BmpHelper.UncompressRLEv2(cpr, decLen);
+                        else
+                            pxls = BmpHelper.UncompressRLEv1(cpr, decLen);
+
+                        //string binFile = path + $"img_{idx:D4}.bin";
+                        //File.WriteAllBytes(binFile, pxls);
                     }
 
-                    byte[] bmp = BmpHelper.ConvertToBmpGTR(pxls, (int)width, (int)height, type, clut);
+                    byte[] bmp = null;
+                    if (magic == 0x5AA521E0)
+                        bmp = BmpHelper.ConvertToBmpGTRv2(pxls, (int)width, (int)height, type);
+                    else
+                        bmp = BmpHelper.ConvertToBmpGTR(pxls, (int)width, (int)height, type, clut);
 
                     string bmpFile = path + $"img_{idx:D4}.bmp";
                     string pngFile = path + $"img_{idx:D4}.png";
@@ -622,6 +688,11 @@ namespace UnpackMiColorFace
                     int width = bin.GetWord(0x04);
                     int height = bin.GetWord(0x06);
 
+                    int rle = bin[0];
+                    int type = bin[2];
+
+                    if (rle == 0 && type == 0) type = 4;
+
                     uint imgSize = (uint)width * 4 * (uint)height;
                     uint arrCount = bin[1];
                     uint maxSize = bin.GetDWord(8) + 0x0C;
@@ -630,7 +701,7 @@ namespace UnpackMiColorFace
 
                     for (int j = 0; j < arrCount; j++)
                     {
-                        int type = 4; // (int)(bin.GetWord(0x05) / width);
+                        //int type = 4; // (int)(bin.GetWord(0x05) / width);
 
                         //Console.WriteLine($"image processing: {idx}/{id:X} {dataOfs:X}/{dataLen:X} {width}x{height} {j}/{arrCount}");
 
@@ -641,11 +712,49 @@ namespace UnpackMiColorFace
                             ? imgSize
                             : maxSize - startOffset;
 
-                        byte[] pxls = bin.GetByteArray(startOffset, leftSize);
-                        byte[] pxlsFull = new byte[imgSize];
-                        Array.Copy(pxls, pxlsFull, pxls.Length);
+                        byte[] pxls = null;
+                        byte[] pxlsFull = null;
 
-                        byte[] bmp = BmpHelper.ConvertToBmpGTR(pxlsFull, (int)width, (int)height, type, null);
+                        uint magic = bin.GetDWord(0x0C + (4 * arrCount));
+
+                        if (magic == 0x5AA521E0)
+                        {
+                            uint arrOffset = 0x0C + (uint)(4 * arrCount);
+                            startOffset = arrOffset;
+                            for (int x = 0; x < j; x++)
+                                startOffset += bin.GetDWord(0x0C + (uint)(x * 4));
+
+                            leftSize = (maxSize - startOffset) >= imgSize
+                                ? imgSize
+                                : maxSize - startOffset;
+
+                            //bin = data.GetByteArray(dataOfs, dataLen + 4);
+                            uint cprLen = bin.GetDWord(0x0C + (uint)(j * 4));
+                            byte[] cpr = bin.GetByteArray(startOffset + 8, cprLen - 8);
+                            type = bin[startOffset + 4] & 0x0F;
+                            int decLen = (int)bin.GetDWord(startOffset + 4) >> 4;
+
+                            if (rle == 0x10)
+                                pxls = BmpHelper.UncompressRLEv2(cpr, decLen);
+                            else
+                                pxls = BmpHelper.UncompressRLEv1(cpr, decLen);
+
+                            pxlsFull = pxls;
+                            //string binFile = path + $"img_{idx:D4}.bin";
+                            //File.WriteAllBytes(binFile, pxls);
+                        }
+                        else
+                        {
+                            pxls = bin.GetByteArray(startOffset, leftSize);
+                            pxlsFull = new byte[imgSize];
+                            Array.Copy(pxls, pxlsFull, pxls.Length);
+                        }
+
+                        byte[] bmp = null;
+                        if (magic == 0x5AA521E0)
+                            bmp = BmpHelper.ConvertToBmpGTRv2(pxls, width, height, type);
+                        else
+                            bmp = BmpHelper.ConvertToBmpGTR(pxlsFull, width, height, type, null);
 
                         string bmpFile = path + $"img_arr_{idx:D4}_{j:D2}.bmp";
                         string pngFile = path + $"img_arr_{idx:D4}_{j:D2}.png";
