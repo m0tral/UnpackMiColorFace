@@ -260,9 +260,22 @@ namespace UnpackMiColorFace.Helpers
                 int colorLen = cnt << 2;
 
                 byte[] palette = data.Take(colorLen).ToArray();
+                byte[] pxls = data.Skip(colorLen).ToArray();
 
-                data = FlipImageData(data.Skip(colorLen).ToArray(), width, height, 1);
-                data = header.Concat(palette).Concat(data).ToArray();
+                #region align low width images
+                int newWidth = 0;
+
+                if (type != 4)
+                    pxls = AlignRowData(pxls, width, height, type, out newWidth);
+                else
+                    newWidth = width;
+
+                lenRaw = data.Length;
+                width = newWidth;
+                #endregion
+
+                pxls = FlipImageData(pxls, width, height, 1);
+                data = header.Concat(palette).Concat(pxls).ToArray();
             }
             else
             {
@@ -312,8 +325,11 @@ namespace UnpackMiColorFace.Helpers
         private static byte[] AlignRowData(byte[] src, int width, int height, int type, out int dstWidth)
         {
             uint rowLen = (uint)(width * type);
-            dstWidth = width + (width % 4);
+            dstWidth = width.GetDWordAligned();
             uint rowLenNew = (uint)(dstWidth * type);
+
+            if (rowLen == rowLenNew)
+                return src;
 
             byte[] dst = new byte[rowLenNew * height];
             uint srcOffset = 0;
