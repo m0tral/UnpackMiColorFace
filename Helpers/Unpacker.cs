@@ -29,6 +29,7 @@ namespace UnpackMiColorFace
             const uint magic_v2 = 0x5AA53412;
 
             int version = 0;
+            int watchType = 0;
 
             if (data.GetDWord(0, 1) == magic_v1_1 && data.GetDWord(4, 1) == magic_v1_2)
                 version = 1;
@@ -40,6 +41,7 @@ namespace UnpackMiColorFace
 
             if (version == 1)
             {
+                watchType = 1;
                 var dir = Directory.CreateDirectory(nameNoExt);
                 path = dir.FullName + "\\";
 
@@ -74,6 +76,7 @@ namespace UnpackMiColorFace
             }
             else if (version == 2)
             {
+                watchType = 3;
                 var dir = Directory.CreateDirectory(nameNoExt);
                 path = dir.FullName + "\\";
 
@@ -86,6 +89,16 @@ namespace UnpackMiColorFace
                 uint offset = 0xB0;
 
                 int subVersion = data.GetByte(0xAB);    // S1 Pro subversion or at location 0x04
+                if (subVersion == 2)
+                    watchType = 4;
+                else
+                {
+                    uint offsetPreviewImg = data.GetDWord(offsetPreview);
+                    int width = data.GetWord(offsetPreviewImg + 4);
+                    if (width == 280)
+                        watchType = 4;
+                }
+
                 int count = data.GetWord(0x1C);
 
                 ProcessPreview(data, offsetPreview, path);
@@ -128,19 +141,19 @@ namespace UnpackMiColorFace
                     string title = data.GetUTF8String(0x68);
 
                     string facefile = c == 0 ? nameNoExt : "AOD\\"+ nameNoExt;
-                    BuildFaceFile(title, lste, lsti, lstil, lstw, path + facefile);
+                    BuildFaceFile(title, watchType, lste, lsti, lstil, lstw, path + facefile);
 
                     offset += 8;
                 }
             }
         }
 
-        private static void BuildFaceFile(string title,
+        private static void BuildFaceFile(string title, int watchType,
                 List<FaceElement> lste, List<FaceImage> lsti,
                 List<FaceImageList> lstil, List<FaceWidget> lstw, string facefile)
         {
             FaceProject face = new FaceProject();
-            face.DeviceType = 3;
+            face.DeviceType = watchType;
             face.Screen.Title = title;
             face.Screen.Bitmap = "preview.png";
 
@@ -520,8 +533,11 @@ namespace UnpackMiColorFace
                 else
                     pxls = BmpHelper.UncompressRLEv1(cpr, decLen);
 
-                //string binFile = path + "preview.bin";
-                //File.WriteAllBytes(binFile, pxls);
+                string binFile = path + "preview_cpr.bin";
+                File.WriteAllBytes(binFile, cpr);
+
+                binFile = path + "preview_dec.bin";
+                File.WriteAllBytes(binFile, pxls);
             }
 
             byte[] bmp = null;
@@ -588,8 +604,6 @@ namespace UnpackMiColorFace
                     int type = bin[1];
 
                     if (bin.GetDWord(0) == 0) type = 4;
-
-                    //int type = 4; // (int)(bin.GetWord(0x05) / width);
 
                     uint magic = bin.GetDWord(0x0C);
                     byte[] clut = null;
