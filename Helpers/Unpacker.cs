@@ -86,22 +86,25 @@ namespace UnpackMiColorFace
                 File.Copy(filename, path + "source.bin");
 
                 uint offsetPreview = 0x20;
-                uint offset = 0xB0;
-
-                int subVersion = data.GetByte(0xAB);    // S1 Pro subversion or at location 0x04
-                if (subVersion == 2)
-                    watchType = 4;
-                else
-                {
-                    uint offsetPreviewImg = data.GetDWord(offsetPreview);
-                    int width = data.GetWord(offsetPreviewImg + 4);
-                    if (width == 280)
-                        watchType = 4;
-                }
+                uint offset = 0xA8;
 
                 int count = data.GetWord(0x1C);
+                int subVersion = data.GetWord(0x1E);    // S1 Pro subversion or at location 0x04 ??
+
+                if (subVersion >= 4)
+                {
+                    watchType = 4;
+                }
+                else
+                {
+                    //uint offsetPreviewImg = data.GetDWord(offsetPreview);
+                    //int width = data.GetWord(offsetPreviewImg + 4);
+                    //if (width == 280)
+                    //    watchType = 4;
+                }
 
                 ProcessPreview(data, offsetPreview, path);
+                string title = data.GetUTF8String(0x68);
 
                 for (int c = 0; c < count; c++)
                 {
@@ -124,6 +127,11 @@ namespace UnpackMiColorFace
                     List<FaceImage> lsti = null;
                     List<FaceImageList> lstil = null;
 
+                    // get back image + preview
+                    uint backImageId = data.GetDWord(offset);
+                    uint previewImageOffset = data.GetDWord(offset + 4);
+                    offset += 8;
+
                     for (int i = 0; i < 10; i++)
                     {
                         if (i == 0)
@@ -138,12 +146,11 @@ namespace UnpackMiColorFace
                         offset += 8;
                     }
 
-                    string title = data.GetUTF8String(0x68);
+                    if (watchType == 4)
+                        lste.Insert(0, new FaceElement(backImageId));
 
                     string facefile = c == 0 ? nameNoExt : "AOD\\"+ nameNoExt;
                     BuildFaceFile(title, watchType, lste, lsti, lstil, lstw, path + facefile);
-
-                    offset += 8;
                 }
             }
         }
@@ -183,8 +190,15 @@ namespace UnpackMiColorFace
                     var imgi = lsti.Find(c => c.Id == wdgt.TargetId);
                     if (imgl == null && imgi == null) continue;
 
-                    if (wdgt.Digits != 0)
+                    if (wdgt.TypeId == 0x01)
                     {
+                        if (imgl.NameList.Count() == 10)
+                        {
+                            var _list = imgl.NameList.ToList();
+                            _list.Add(imgl.NameList[0]);
+                            imgl.NameList = _list.ToArray();
+                        }
+
                         face.Screen.Widgets.Add(new FaceWidgetDigitalNum()
                         {
                             Shape = 32,
@@ -199,7 +213,7 @@ namespace UnpackMiColorFace
                             BitmapList = string.Join("|", imgl.NameList),
                         });
                     }
-                    else if (wdgt.Align == 0x20) {
+                    else if (wdgt.TypeId == 0x02) {
                         string bmpList = "";
                         for (int x = 0; x < imgl.NameList.Length; x++)
                         {
@@ -220,7 +234,7 @@ namespace UnpackMiColorFace
                             BitmapList = bmpList,
                         });
                     }
-                    else if (wdgt.Align == 0x30)
+                    else if (wdgt.TypeId == 0x03)
                     {
                         if (wdgt.DataSrcDisplay == 0x11)
                         {
@@ -353,7 +367,7 @@ namespace UnpackMiColorFace
                     lst.Add(new FaceWidget()
                     {
                         Shape = bin[0],
-                        DataSrcDisplay = bin[1],                        
+                        DataSrcDisplay = bin[1],
                         X = bin.Length >= 0x20 ? bin.GetWord(0x14) : 0,
                         Y = bin.Length >= 0x20 ? bin.GetWord(0x16) : 0,
                         Width = 0,
@@ -361,6 +375,7 @@ namespace UnpackMiColorFace
                         Id = id,
                         Digits = bin[2],
                         Align = bin[3],
+                        TypeId = bin[3] >> 4,
                         TargetId = bin.GetDWord(0x08)
                     });
                 }

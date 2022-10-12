@@ -47,6 +47,8 @@ namespace UnpackMiColorFace.FaceFile
         public byte Digits { get; internal set; }
         [XmlIgnore]
         public byte Align { get; internal set; }
+        [XmlIgnore]
+        public int TypeId { get; internal set; }
 
         public static FaceWidget Get(byte[] bin)
         {
