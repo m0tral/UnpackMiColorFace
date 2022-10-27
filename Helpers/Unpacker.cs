@@ -29,7 +29,7 @@ namespace UnpackMiColorFace
             const uint magic_v2 = 0x5AA53412;
 
             int version = 0;
-            int watchType = 0;
+            var watchType = WathType.Undefined;
 
             if (data.GetDWord(0, 1) == magic_v1_1 && data.GetDWord(4, 1) == magic_v1_2)
                 version = 1;
@@ -41,7 +41,7 @@ namespace UnpackMiColorFace
 
             if (version == 1)
             {
-                watchType = 1;
+                watchType = WathType.Gen1;
                 var dir = Directory.CreateDirectory(nameNoExt);
                 path = dir.FullName + "\\";
 
@@ -76,7 +76,7 @@ namespace UnpackMiColorFace
             }
             else if (version == 2)
             {
-                watchType = 3;
+                watchType = WathType.Gen2;
                 var dir = Directory.CreateDirectory(nameNoExt);
                 path = dir.FullName + "\\";
 
@@ -91,9 +91,9 @@ namespace UnpackMiColorFace
                 int count = data.GetWord(0x1C);
                 int subVersion = data.GetWord(0x1E);    // S1 Pro subversion or at location 0x04 ??
 
-                if (subVersion >= 4)
+                if (subVersion >= 4)    // can be 4 or 6 currently
                 {
-                    watchType = 4;
+                    watchType = WathType.Gen3;
                 }
                 else
                 {
@@ -112,8 +112,11 @@ namespace UnpackMiColorFace
                         ? nameNoExt + @"\images"
                         :((c == 1)
                             ? nameNoExt + @"\AOD\images"
-                            : nameNoExt + $@"\images_{c:D}")
+                            : nameNoExt + $@"\images")
                         );
+
+                    if (watchType == WathType.Gen3)
+                        imagesFolder = nameNoExt + @"\images";
 
                     if (Directory.Exists(imagesFolder))
                         dir = new DirectoryInfo(imagesFolder);
@@ -146,21 +149,209 @@ namespace UnpackMiColorFace
                         offset += 8;
                     }
 
-                    if (watchType == 4)
+                    if (watchType == WathType.Gen3)
                         lste.Insert(0, new FaceElement(backImageId));
 
-                    string facefile = c == 0 ? nameNoExt : "AOD\\"+ nameNoExt;
-                    BuildFaceFile(title, watchType, lste, lsti, lstil, lstw, path + facefile);
+                    bool isAOD = c == 1;
+
+                    string facefile = c > 1 ? $"{nameNoExt}_{c}" : nameNoExt;
+                    if (isAOD) facefile = "AOD\\"+ nameNoExt;
+
+                    if (watchType == WathType.Gen3 && isAOD)
+                        facefile = $"{nameNoExt}_AOD";
+
+                    var face = BuildFaceFile(title, watchType, lste, lsti, lstil, lstw, path + facefile);
+                    BuildPreview(face, watchType, imagesFolder, path + facefile);
                 }
             }
         }
 
-        private static void BuildFaceFile(string title, int watchType,
+        private static void BuildPreview(FaceProject face, WathType watchType, string imagesFolder, string facefile)
+        {
+            int index = 0;
+            int displayWidth = GetScreenWidth(watchType);
+            int displayHeight = GetScreenHeight(watchType);
+
+            using (var preview = new MagickImage(MagickColor.FromRgb(0, 0, 0), displayWidth, displayHeight))
+            {
+                //preview.BackgroundColor = MagickColor.FromRgb(0, 0, 0);
+                //preview.FloodFill(MagickColor.FromRgb(0, 0, 0), 0, 0);
+                foreach (var widget in face.Screen.Widgets)
+                {
+                    switch (widget.Shape)
+                    {
+                        case 30: // image
+                            var widgetImage = widget as FaceWidgetImage;
+                            string pathImage = $"{imagesFolder}\\{widgetImage.Bitmap}";
+                            using (var overlay = new MagickImage())
+                            {
+                                overlay.Read(pathImage);
+                                preview.Composite(overlay, widget.X, widget.Y, CompositeOperator.Over);
+                            }
+                            break;
+                        case 43: // CircularGauge
+                            var widgetCirc = widget as FaceWidgetCircularGauge;                            
+                            if (!string.IsNullOrEmpty(widgetCirc.PointerImage))
+                            {
+                                string pathCirc = $"{imagesFolder}\\{widgetCirc.PointerImage}";
+                                ApplyCircleImage(preview, widgetCirc, pathCirc, 150);
+                            }
+                            break;
+                        case 31: // imageList
+                            var wImgList = widget as FaceWidgetImageList;
+                            var imgList = wImgList.BitmapList.Split('|');
+                            string digitIndex = GetStringSource(wImgList.DataSrcIndex);
+                            int digitInt = int.Parse(digitIndex);
+                            if (digitInt > imgList.Length)
+                                digitInt = 1;
+                            var pathFirst = imgList[digitInt].Split(':')[1];
+                            string pathList = $"{imagesFolder}\\{pathFirst}";
+                            using (var overlay = new MagickImage())
+                            {
+                                overlay.Read(pathList);
+                                preview.Composite(overlay, widget.X, widget.Y, CompositeOperator.Over);
+                            }
+                            break;
+                        case 32: // image
+                            var widgetNum = widget as FaceWidgetDigitalNum;
+                            using (var overlay = new MagickImage())
+                            {
+                                int width = widgetNum.Width;
+                                int spacing = widgetNum.Spacing;
+
+                                string digit = GetStringSource(widgetNum.DataSrcValue);
+                                //string digit = "12000000";
+                                int posX = widget.X;
+                                int posY = widget.Y;
+                                int maxLen = widgetNum.Digits > digit.Length ? digit.Length : widgetNum.Digits;
+
+                                if (widgetNum.Alignment == 2    // center
+                                    && (watchType == WathType.Gen2 || watchType == WathType.Gen3))
+                                {
+                                    posX -= ((width + spacing) * maxLen) / 2;
+                                }
+
+                                string[] bitmaps = widgetNum.BitmapList.Split('|');
+
+                                for (int i = 0; i < maxLen; i++)
+                                {
+                                    string pathNum = $"{imagesFolder}\\{bitmaps[int.Parse(digit[i].ToString())]}";
+                                    overlay.Read(pathNum);
+                                    preview.Composite(overlay, posX, posY, CompositeOperator.Over);
+                                    posX += width + spacing;
+                                }
+                            }
+                            break;
+                        case 27: // analog clock
+                            var clock = widget as FaceWidgetAnalogClock;
+                            if (!string.IsNullOrEmpty(clock.HourHandImage))
+                            {
+                                string pathHand = $"{imagesFolder}\\{clock.HourHandImage}";
+                                ApplyClockImage(preview, clock, clock.HourImageRotateX, clock.HourImageRotateY, pathHand, -60);
+                            }
+                            if (!string.IsNullOrEmpty(clock.MinuteHandImage))
+                            {
+                                string pathHand = $"{imagesFolder}\\{clock.MinuteHandImage}";
+                                ApplyClockImage(preview, clock, clock.MinuteImageRotateX, clock.MinuteImageRotateY, pathHand, 50);
+                            }
+                            if (!string.IsNullOrEmpty(clock.SecondHandImage))
+                            {
+                                string pathHand = $"{imagesFolder}\\{clock.SecondHandImage}";
+                                ApplyClockImage(preview, clock, clock.SecondImageRotateX, clock.SecondImageRotateY, pathHand, 120);
+                            }
+                            break;
+                        default:
+                            break;
+                    }
+                    index++;
+                }
+
+                // cut image by circle
+                preview.Alpha(AlphaOption.Set);
+                using (var copy = preview.Clone())
+                {
+                    copy.Distort(DistortMethod.DePolar, 0);
+                    copy.VirtualPixelMethod = VirtualPixelMethod.HorizontalTile;
+                    copy.BackgroundColor = MagickColors.None;
+                    copy.Distort(DistortMethod.Polar, 0);
+
+                    preview.Compose = CompositeOperator.DstIn;
+                    preview.Composite(copy, CompositeOperator.CopyAlpha);
+                }
+                
+                preview.Write($"{facefile}_preview.png");                
+            }
+        }
+
+        private static void ApplyCircleImage(MagickImage preview, FaceWidgetCircularGauge gauge, string pathImage, int angle)
+        {
+            using (var overlay = new MagickImage(MagickColor.FromRgba(0, 0, 0, 0), gauge.Width, gauge.Height))
+            {
+                int posX = ((gauge.Width - gauge.X) / 2) - gauge.PointerRotateX;
+                int posY = ((gauge.Height - gauge.Y) / 2) - gauge.PointerRotateY;
+
+                var img = new MagickImage(pathImage);
+                overlay.Composite(img, posX, posY, CompositeOperator.Over);
+                overlay.Distort(DistortMethod.ScaleRotateTranslate, gauge.Width / 2, gauge.Height / 2, 1, angle);
+                preview.Composite(overlay, 0, 0, CompositeOperator.Over);
+            }
+        }
+
+        private static string GetStringSource(string dataSrcValue)
+        {
+            switch (dataSrcValue)
+            {
+                case FaceItemDataSrc.Month: return "10";
+                case FaceItemDataSrc.Day: return "21";
+                case FaceItemDataSrc.Weekday: return "3";
+
+                case FaceItemDataSrc.Hour: return "12";
+                case FaceItemDataSrc.HourHigh: return "1";
+                case FaceItemDataSrc.HourLow: return "2";
+                case FaceItemDataSrc.Minute: return "45";
+                case FaceItemDataSrc.MinuteHigh: return "4";
+                case FaceItemDataSrc.MinuteLow: return "5";
+                case FaceItemDataSrc.Second: return "28";
+                case FaceItemDataSrc.SecondHigh: return "2";
+                case FaceItemDataSrc.SecondLow: return "8";
+
+                case FaceItemDataSrc.Steps: return "15652";
+                case FaceItemDataSrc.Calories: return "845";
+                case FaceItemDataSrc.Hrm: return "174";
+
+                case FaceItemDataSrc.ActivityCount: return "10";
+                case FaceItemDataSrc.Stress: return "42";
+                case FaceItemDataSrc.Sleep: return "60";
+
+                case FaceItemDataSrc.Battery: return "100";
+                case FaceItemDataSrc.WeatherTemp: return "23";
+                case FaceItemDataSrc.WeatherType: return "1";
+                case FaceItemDataSrc.WeatherAir: return "2";
+
+                default: return "120000";
+            }
+        }
+
+        private static void ApplyClockImage(MagickImage preview, FaceWidgetAnalogClock clock, int rotateX, int rotateY, string pathImage, int angle)
+        {
+            using (var overlay = new MagickImage(MagickColor.FromRgba(0, 0, 0, 0), clock.Width, clock.Height))
+            {
+                int posX = ((clock.Width - clock.X) / 2) - rotateX;
+                int posY = ((clock.Height - clock.Y) / 2) - rotateY;
+
+                var img = new MagickImage(pathImage);
+                overlay.Composite(img, posX, posY, CompositeOperator.Over);
+                overlay.Distort(DistortMethod.ScaleRotateTranslate, clock.Width / 2, clock.Height / 2, 1, angle);
+                preview.Composite(overlay, 0, 0, CompositeOperator.Over);
+            }
+        }
+
+        private static FaceProject BuildFaceFile(string title, WathType watchType,
                 List<FaceElement> lste, List<FaceImage> lsti,
                 List<FaceImageList> lstil, List<FaceWidget> lstw, string facefile)
         {
             FaceProject face = new FaceProject();
-            face.DeviceType = watchType;
+            face.DeviceType = (int)watchType;
             face.Screen.Title = title;
             face.Screen.Bitmap = "preview.png";
 
@@ -208,6 +399,7 @@ namespace UnpackMiColorFace
                             Width = imgl.Width,
                             Height = imgl.Height,
                             Digits = wdgt.Digits,
+                            Alignment = wdgt.Align,
                             Alpha = 0xFF,
                             DataSrcValue = $"{wdgt.Shape:X2}{wdgt.DataSrcDisplay:X2}",
                             BitmapList = string.Join("|", imgl.NameList),
@@ -246,8 +438,8 @@ namespace UnpackMiColorFace
                                     Name = $"analogClock_{idx:D2}",
                                     X = 0,
                                     Y = 0,
-                                    Width = 466,
-                                    Height = 466,
+                                    Width = GetScreenWidth(watchType), 
+                                    Height = GetScreenHeight(watchType),
                                     Alpha = 0xFF,                                    
                                 });
                             }
@@ -303,6 +495,24 @@ namespace UnpackMiColorFace
             xml = xml.Replace("<Widget", "\r\n<Widget");
             Debug.WriteLine(xml);
             File.WriteAllText($"{facefile}.fprj", xml);
+
+            return face;
+        }
+
+        private static int GetScreenHeight(WathType watchType)
+        {
+            switch (watchType)
+            {
+                case WathType.Gen2: return 466;
+                case WathType.Gen3: return 480;
+                case WathType.Gen1:
+                default: return 454;
+            }
+        }
+
+        private static int GetScreenWidth(WathType watchType)
+        {
+            return GetScreenHeight(watchType);
         }
 
         private static List<FaceElement> ProcessElements(byte[] data, uint offset, string path)
@@ -374,7 +584,7 @@ namespace UnpackMiColorFace
                         Height = 0,
                         Id = id,
                         Digits = bin[2],
-                        Align = bin[3],
+                        Align = (byte)(bin[3] & 0x03),
                         TypeId = bin[3] >> 4,
                         TargetId = bin.GetDWord(0x08)
                     });
@@ -659,7 +869,7 @@ namespace UnpackMiColorFace
                     else
                         bmp = BmpHelper.ConvertToBmpGTR(pxls, (int)width, (int)height, type, clut);
 
-                    string bmpFile = path + $"img_{idx:D4}.bmp";
+                    string bmpFile = path + $"img_{idx:D4}_{type}_{clut}.bmp";
                     string pngFile = path + $"img_{idx:D4}.png";
                     File.WriteAllBytes(bmpFile, bmp);
 
@@ -667,7 +877,10 @@ namespace UnpackMiColorFace
                     {
                         magik.Read(bmpFile);
                         magik.ColorType = ColorType.TrueColorAlpha;
-                        magik.Transparent(MagickColor.FromRgba(0, 0, 0, 0));
+                        if (magic == 0x5AA521E0)
+                            magik.Transparent(MagickColor.FromRgba(0, 0, 0, 0xFF));
+                        else
+                            magik.Transparent(MagickColor.FromRgba(0, 0, 0, 0));
                         magik.Format = MagickFormat.Png32;
                         magik.Write(pngFile);
                     }
@@ -795,7 +1008,10 @@ namespace UnpackMiColorFace
                         {
                             magik.Read(bmpFile);
                             magik.ColorType = ColorType.TrueColorAlpha;
-                            magik.Transparent(MagickColor.FromRgba(0, 0, 0, 0));
+                            if (magic == 0x5AA521E0)
+                                magik.Transparent(MagickColor.FromRgba(0, 0, 0, 0xFF));
+                            else
+                                magik.Transparent(MagickColor.FromRgba(0, 0, 0, 0));
                             magik.Format = MagickFormat.Png32;
                             magik.Write(pngFile);
                         }
