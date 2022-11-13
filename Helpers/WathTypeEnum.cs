@@ -15,5 +15,9 @@
         /// Mi Watch S1 Pro
         /// </summary>
         Gen3 = 4,
+        /// <summary>
+        /// Redme Watch 2, Poco Watch
+        /// </summary>
+        Redme = 5,
     }
 }

@@ -91,17 +91,20 @@ namespace UnpackMiColorFace
                 int count = data.GetWord(0x1C);
                 int subVersion = data.GetWord(0x1E);    // S1 Pro subversion or at location 0x04 ??
 
-                if (subVersion >= 4)    // can be 4 or 6 currently
-                {
+                //if (subVersion >= 4)  // can be 4 or 6 currently
+                //{
+                //    watchType = WathType.Gen3;
+                //}
+                //else
+                //{
+                uint offsetPreviewImg = data.GetDWord(offsetPreview);
+                int width = data.GetWord(offsetPreviewImg + 4);
+                int height = data.GetWord(offsetPreviewImg + 6);
+                if (width == 280)
                     watchType = WathType.Gen3;
-                }
-                else
-                {
-                    //uint offsetPreviewImg = data.GetDWord(offsetPreview);
-                    //int width = data.GetWord(offsetPreviewImg + 4);
-                    //if (width == 280)
-                    //    watchType = 4;
-                }
+                else if (width == 178 && height == 200)
+                    watchType = WathType.Redme;
+                //}
 
                 ProcessPreview(data, offsetPreview, path);
                 string title = data.GetUTF8String(0x68);
@@ -505,6 +508,7 @@ namespace UnpackMiColorFace
             {
                 case WathType.Gen2: return 466;
                 case WathType.Gen3: return 480;
+                case WathType.Redme: return 360;
                 case WathType.Gen1:
                 default: return 454;
             }
@@ -512,7 +516,14 @@ namespace UnpackMiColorFace
 
         private static int GetScreenWidth(WathType watchType)
         {
-            return GetScreenHeight(watchType);
+            switch (watchType)
+            {
+                case WathType.Gen2: return 466;
+                case WathType.Gen3: return 480;
+                case WathType.Redme: return 320;
+                case WathType.Gen1:
+                default: return 454;
+            }
         }
 
         private static List<FaceElement> ProcessElements(byte[] data, uint offset, string path)
