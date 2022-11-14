@@ -19,5 +19,9 @@
         /// Redme Watch 2, Poco Watch
         /// </summary>
         Redme = 5,
+        /// <summary>
+        /// Mi Band 7 Pro
+        /// </summary>
+        Band7Pro = 6,
     }
 }

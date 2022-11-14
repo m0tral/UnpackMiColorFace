@@ -104,6 +104,8 @@ namespace UnpackMiColorFace
                     watchType = WathType.Gen3;
                 else if (width == 178 && height == 200)
                     watchType = WathType.Redme;
+                else if (width == 220 && height == 358)
+                    watchType = WathType.Band7Pro;
                 //}
 
                 ProcessPreview(data, offsetPreview, path);
@@ -229,7 +231,10 @@ namespace UnpackMiColorFace
                                 int maxLen = widgetNum.Digits > digit.Length ? digit.Length : widgetNum.Digits;
 
                                 if (widgetNum.Alignment == 2    // center
-                                    && (watchType == WathType.Gen2 || watchType == WathType.Gen3))
+                                    && (watchType == WathType.Gen2
+                                        || watchType == WathType.Gen3
+                                        || watchType == WathType.Redme
+                                        || watchType == WathType.Band7Pro))
                                 {
                                     posX -= ((width + spacing) * maxLen) / 2;
                                 }
@@ -269,17 +274,22 @@ namespace UnpackMiColorFace
                     index++;
                 }
 
-                // cut image by circle
-                preview.Alpha(AlphaOption.Set);
-                using (var copy = preview.Clone())
+                if (watchType == WathType.Gen1
+                    || watchType == WathType.Gen2
+                    || watchType == WathType.Gen3)
                 {
-                    copy.Distort(DistortMethod.DePolar, 0);
-                    copy.VirtualPixelMethod = VirtualPixelMethod.HorizontalTile;
-                    copy.BackgroundColor = MagickColors.None;
-                    copy.Distort(DistortMethod.Polar, 0);
+                    // cut image by circle
+                    preview.Alpha(AlphaOption.Set);
+                    using (var copy = preview.Clone())
+                    {
+                        copy.Distort(DistortMethod.DePolar, 0);
+                        copy.VirtualPixelMethod = VirtualPixelMethod.HorizontalTile;
+                        copy.BackgroundColor = MagickColors.None;
+                        copy.Distort(DistortMethod.Polar, 0);
 
-                    preview.Compose = CompositeOperator.DstIn;
-                    preview.Composite(copy, CompositeOperator.CopyAlpha);
+                        preview.Compose = CompositeOperator.DstIn;
+                        preview.Composite(copy, CompositeOperator.CopyAlpha);
+                    }
                 }
                 
                 preview.Write($"{facefile}_preview.png");                
@@ -509,6 +519,7 @@ namespace UnpackMiColorFace
                 case WathType.Gen2: return 466;
                 case WathType.Gen3: return 480;
                 case WathType.Redme: return 360;
+                case WathType.Band7Pro: return 456;
                 case WathType.Gen1:
                 default: return 454;
             }
@@ -521,6 +532,7 @@ namespace UnpackMiColorFace
                 case WathType.Gen2: return 466;
                 case WathType.Gen3: return 480;
                 case WathType.Redme: return 320;
+                case WathType.Band7Pro: return 280;
                 case WathType.Gen1:
                 default: return 454;
             }
