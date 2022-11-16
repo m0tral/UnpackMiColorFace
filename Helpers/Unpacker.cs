@@ -29,7 +29,7 @@ namespace UnpackMiColorFace
             const uint magic_v2 = 0x5AA53412;
 
             int version = 0;
-            var watchType = WathType.Undefined;
+            var watchType = WatchType.Undefined;
 
             if (data.GetDWord(0, 1) == magic_v1_1 && data.GetDWord(4, 1) == magic_v1_2)
                 version = 1;
@@ -41,7 +41,7 @@ namespace UnpackMiColorFace
 
             if (version == 1)
             {
-                watchType = WathType.Gen1;
+                watchType = WatchType.Gen1;
                 var dir = Directory.CreateDirectory(nameNoExt);
                 path = dir.FullName + "\\";
 
@@ -76,7 +76,7 @@ namespace UnpackMiColorFace
             }
             else if (version == 2)
             {
-                watchType = WathType.Gen2;
+                watchType = WatchType.Gen2;
                 var dir = Directory.CreateDirectory(nameNoExt);
                 path = dir.FullName + "\\";
 
@@ -101,14 +101,14 @@ namespace UnpackMiColorFace
                 int width = data.GetWord(offsetPreviewImg + 4);
                 int height = data.GetWord(offsetPreviewImg + 6);
                 if (width == 280)
-                    watchType = WathType.Gen3;
+                    watchType = WatchType.Gen3;
                 else if (width == 178 && height == 200)
-                    watchType = WathType.Redme;
+                    watchType = WatchType.Redmi;
                 else if (width == 220 && height == 358)
-                    watchType = WathType.Band7Pro;
+                    watchType = WatchType.Band7Pro;
                 //}
 
-                ProcessPreview(data, offsetPreview, path);
+                ProcessPreview(watchType, data, offsetPreview, path);
                 string title = data.GetUTF8String(0x68);
 
                 for (int c = 0; c < count; c++)
@@ -120,7 +120,7 @@ namespace UnpackMiColorFace
                             : nameNoExt + $@"\images")
                         );
 
-                    if (watchType == WathType.Gen3)
+                    if (watchType == WatchType.Gen3)
                         imagesFolder = nameNoExt + @"\images";
 
                     if (Directory.Exists(imagesFolder))
@@ -145,16 +145,16 @@ namespace UnpackMiColorFace
                         if (i == 0)
                             lste = ProcessElements(data, offset, path);
                         if (i == 2)
-                            lsti = ProcessImageSingle(data, offset, pathImages);
+                            lsti = ProcessImageSingle(watchType, data, offset, pathImages);
                         if (i == 3)
-                            lstil = ProcessImageList(data, offset, pathImages);
+                            lstil = ProcessImageList(watchType, data, offset, pathImages);
                         if (i == 7)
                             lstw = ProcessWidgets(data, offset, path);
 
                         offset += 8;
                     }
 
-                    if (watchType == WathType.Gen3)
+                    if (watchType == WatchType.Gen3)
                         lste.Insert(0, new FaceElement(backImageId));
 
                     bool isAOD = c == 1;
@@ -162,7 +162,7 @@ namespace UnpackMiColorFace
                     string facefile = c > 1 ? $"{nameNoExt}_{c}" : nameNoExt;
                     if (isAOD) facefile = "AOD\\"+ nameNoExt;
 
-                    if (watchType == WathType.Gen3 && isAOD)
+                    if (watchType == WatchType.Gen3 && isAOD)
                         facefile = $"{nameNoExt}_AOD";
 
                     var face = BuildFaceFile(title, watchType, lste, lsti, lstil, lstw, path + facefile);
@@ -171,7 +171,7 @@ namespace UnpackMiColorFace
             }
         }
 
-        private static void BuildPreview(FaceProject face, WathType watchType, string imagesFolder, string facefile)
+        private static void BuildPreview(FaceProject face, WatchType watchType, string imagesFolder, string facefile)
         {
             int index = 0;
             int displayWidth = GetScreenWidth(watchType);
@@ -231,10 +231,10 @@ namespace UnpackMiColorFace
                                 int maxLen = widgetNum.Digits > digit.Length ? digit.Length : widgetNum.Digits;
 
                                 if (widgetNum.Alignment == 2    // center
-                                    && (watchType == WathType.Gen2
-                                        || watchType == WathType.Gen3
-                                        || watchType == WathType.Redme
-                                        || watchType == WathType.Band7Pro))
+                                    && (watchType == WatchType.Gen2
+                                        || watchType == WatchType.Gen3
+                                        || watchType == WatchType.Redmi
+                                        || watchType == WatchType.Band7Pro))
                                 {
                                     posX -= ((width + spacing) * maxLen) / 2;
                                 }
@@ -274,9 +274,9 @@ namespace UnpackMiColorFace
                     index++;
                 }
 
-                if (watchType == WathType.Gen1
-                    || watchType == WathType.Gen2
-                    || watchType == WathType.Gen3)
+                if (watchType == WatchType.Gen1
+                    || watchType == WatchType.Gen2
+                    || watchType == WatchType.Gen3)
                 {
                     // cut image by circle
                     preview.Alpha(AlphaOption.Set);
@@ -359,7 +359,7 @@ namespace UnpackMiColorFace
             }
         }
 
-        private static FaceProject BuildFaceFile(string title, WathType watchType,
+        private static FaceProject BuildFaceFile(string title, WatchType watchType,
                 List<FaceElement> lste, List<FaceImage> lsti,
                 List<FaceImageList> lstil, List<FaceWidget> lstw, string facefile)
         {
@@ -403,11 +403,24 @@ namespace UnpackMiColorFace
                             imgl.NameList = _list.ToArray();
                         }
 
+                        int posX = e.PosX;
+                        int width = imgl.Width;
+                        int spacing = 0;
+                        int maxLen = wdgt.Digits;
+                        if (wdgt.Align == 2    // center
+                            && (watchType == WatchType.Gen2
+                                || watchType == WatchType.Gen3
+                                || watchType == WatchType.Redmi
+                                || watchType == WatchType.Band7Pro))
+                        {
+                            posX -= ((width + spacing) * maxLen) / 2;
+                        }
+
                         face.Screen.Widgets.Add(new FaceWidgetDigitalNum()
                         {
                             Shape = 32,
                             Name = $"widget_{idx:D2}",
-                            X = e.PosX,
+                            X = posX,
                             Y = e.PosY,
                             Width = imgl.Width,
                             Height = imgl.Height,
@@ -512,28 +525,28 @@ namespace UnpackMiColorFace
             return face;
         }
 
-        private static int GetScreenHeight(WathType watchType)
+        private static int GetScreenHeight(WatchType watchType)
         {
             switch (watchType)
             {
-                case WathType.Gen2: return 466;
-                case WathType.Gen3: return 480;
-                case WathType.Redme: return 360;
-                case WathType.Band7Pro: return 456;
-                case WathType.Gen1:
+                case WatchType.Gen2: return 466;
+                case WatchType.Gen3: return 480;
+                case WatchType.Redmi: return 360;
+                case WatchType.Band7Pro: return 456;
+                case WatchType.Gen1:
                 default: return 454;
             }
         }
 
-        private static int GetScreenWidth(WathType watchType)
+        private static int GetScreenWidth(WatchType watchType)
         {
             switch (watchType)
             {
-                case WathType.Gen2: return 466;
-                case WathType.Gen3: return 480;
-                case WathType.Redme: return 320;
-                case WathType.Band7Pro: return 280;
-                case WathType.Gen1:
+                case WatchType.Gen2: return 466;
+                case WatchType.Gen3: return 480;
+                case WatchType.Redmi: return 320;
+                case WatchType.Band7Pro: return 280;
+                case WatchType.Gen1:
                 default: return 454;
             }
         }
@@ -739,7 +752,7 @@ namespace UnpackMiColorFace
             };
         }
 
-        private static void ProcessPreview(byte[] data, uint offset, string path)
+        private static void ProcessPreview(WatchType watchType, byte[] data, uint offset, string path)
         {        
             uint dataOfs = data.GetDWord(offset);
             uint dataLen = data.GetDWord(dataOfs + 8);
@@ -754,6 +767,11 @@ namespace UnpackMiColorFace
             int type = bin[1];
 
             if (bin.GetDWord(0) == 0) type = 4;
+            if (watchType == WatchType.Redmi || watchType == WatchType.Band7Pro)
+            {
+                type = bin[0] & 0xF;
+                if (type == 4) type = 2;
+            }
 
             uint magic = 0;
             byte[] clut = null;
@@ -824,7 +842,7 @@ namespace UnpackMiColorFace
             File.Copy(pngFile, pngFileCopy);
         }
 
-        private static List<FaceImage> ProcessImageSingle(byte[] data, uint offset, string path)
+        private static List<FaceImage> ProcessImageSingle(WatchType watchType, byte[] data, uint offset, string path)
         {
             uint blockCount = data.GetDWord(offset);
             uint blockOffset = data.GetDWord(offset + 4);
@@ -855,7 +873,20 @@ namespace UnpackMiColorFace
 
                     uint magic = bin.GetDWord(0x0C);
                     byte[] clut = null;
+                    byte[] alfa = null;
                     byte[] pxls = bin.GetByteArray(0x0C, (uint)bin.Length - 0x0C);
+
+                    if (watchType == WatchType.Redmi
+                        || watchType == WatchType.Band7Pro)
+                    {
+                        if ((rle & 0x0F) == 0x04)
+                        {
+                            type = 2;
+                            uint pxlLen = (uint)(width * 2 * height);
+                            alfa = pxls.GetByteArray(pxlLen, (uint)(width * height));
+                            pxls = pxls.GetByteArray(0, pxlLen);
+                        }
+                    }
 
                     if (magic != 0x5AA521E0)
                     {
@@ -905,6 +936,32 @@ namespace UnpackMiColorFace
                         else
                             magik.Transparent(MagickColor.FromRgba(0, 0, 0, 0));
                         magik.Format = MagickFormat.Png32;
+
+                        if (watchType == WatchType.Redmi
+                            || watchType == WatchType.Band7Pro)
+                        {
+                            int pixelIndex = 0;
+                            int rowIndex = 0;
+                            foreach (var px in magik.GetPixels())
+                            {
+                                if (px.Channels == 4)
+                                {
+                                    if (rowIndex >= width)
+                                    {
+                                        px.SetChannel(3, 0);
+                                    }
+                                    else
+                                    {
+                                        px.SetChannel(3, (ushort)(alfa[pixelIndex++] << 8 | 0xFF));
+                                    }
+
+                                    rowIndex++;
+                                    if (rowIndex >= magik.Width)
+                                        rowIndex = 0;
+                                }
+                            }
+                        }
+
                         magik.Write(pngFile);
                     }
 
@@ -929,7 +986,7 @@ namespace UnpackMiColorFace
             return lst;
         }
 
-        private static List<FaceImageList> ProcessImageList(byte[] data, uint offset, string path)
+        private static List<FaceImageList> ProcessImageList(WatchType watchType, byte[] data, uint offset, string path)
         {
             uint blockCount = data.GetDWord(offset);
             uint blockOffset = data.GetDWord(offset + 4);
@@ -959,6 +1016,19 @@ namespace UnpackMiColorFace
                     if (rle == 0 && type == 0) type = 4;
 
                     uint imgSize = (uint)width * 4 * (uint)height;
+                    uint alfSize = 0;
+
+                    if (watchType == WatchType.Redmi
+                        || watchType == WatchType.Band7Pro)
+                    {
+                        if ((rle & 0x0F) == 0x04)
+                        {
+                            type = 2;
+                            imgSize = (uint)width * 2 * (uint)height;
+                            alfSize = (uint)width * (uint)height;
+                        }
+                    }
+
                     uint arrCount = bin[1];
                     uint maxSize = bin.GetDWord(8) + 0x0C;
 
@@ -972,13 +1042,14 @@ namespace UnpackMiColorFace
 
                         //if (dataOfs == 0x3CEA6C) Debugger.Break();
 
-                        uint startOffset = 0x0C + (uint)(j * imgSize);
+                        uint startOffset = 0x0C + (uint)(j * (imgSize + alfSize));
                         uint leftSize = (maxSize - startOffset) >= imgSize
                             ? imgSize
                             : maxSize - startOffset;
 
                         byte[] pxls = null;
                         byte[] pxlsFull = null;
+                        byte[] alfa = null;
 
                         uint magic = bin.GetDWord(0x0C + (4 * arrCount));
 
@@ -1013,6 +1084,13 @@ namespace UnpackMiColorFace
                             pxls = bin.GetByteArray(startOffset, leftSize);
                             pxlsFull = new byte[imgSize];
                             Array.Copy(pxls, pxlsFull, pxls.Length);
+
+                            if (watchType == WatchType.Redmi
+                                || watchType == WatchType.Band7Pro)
+                            {
+                                alfa = new byte[alfSize];
+                                Array.Copy(bin.GetByteArray(startOffset + imgSize, alfSize), alfa, alfSize);
+                            }
                         }
 
                         byte[] bmp = null;
@@ -1036,6 +1114,32 @@ namespace UnpackMiColorFace
                             else
                                 magik.Transparent(MagickColor.FromRgba(0, 0, 0, 0));
                             magik.Format = MagickFormat.Png32;
+
+                            if (watchType == WatchType.Redmi
+                                || watchType == WatchType.Band7Pro)
+                            {
+                                int pixelIndex = 0;
+                                int rowIndex = 0;
+                                foreach (var px in magik.GetPixels())
+                                {
+                                    if (px.Channels == 4)
+                                    {
+                                        if (rowIndex >= width)
+                                        {
+                                            px.SetChannel(3, 0);
+                                        }
+                                        else
+                                        {
+                                            px.SetChannel(3, (ushort)(alfa[pixelIndex++] << 8 | 0xFF));
+                                        }
+
+                                        rowIndex++;
+                                        if (rowIndex >= magik.Width)
+                                            rowIndex = 0;
+                                    }
+                                }
+                            }
+
                             magik.Write(pngFile);
                         }
 

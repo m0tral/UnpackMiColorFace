@@ -1,6 +1,6 @@
 ﻿namespace UnpackMiColorFace
 {
-    internal enum WathType
+    internal enum WatchType
     {
         Undefined = 0,
         /// <summary>
@@ -16,9 +16,9 @@
         /// </summary>
         Gen3 = 4,
         /// <summary>
-        /// Redme Watch 2, Poco Watch
+        /// Redmi Watch 2, Poco Watch
         /// </summary>
-        Redme = 5,
+        Redmi = 5,
         /// <summary>
         /// Mi Band 7 Pro
         /// </summary>
