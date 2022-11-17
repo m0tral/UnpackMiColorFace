@@ -417,7 +417,13 @@ namespace UnpackMiColorFace.Helpers
             return dataNew;
         }
 
-        internal static byte[] UncompressRLEv2(byte[] data, int destLen)
+        /// <summary>
+        /// one byte record
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="destLen"></param>
+        /// <returns></returns>
+        internal static byte[] UncompressRLEv20(byte[] data, int destLen)
         {
             uint offset = 0;
             int lenUnpacked = 0;
@@ -483,7 +489,13 @@ namespace UnpackMiColorFace.Helpers
             return dataNew;
         }
 
-        internal static byte[] UncompressRLEv1(byte[] data, int destLen)
+        /// <summary>
+        /// 4 bytes record
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="destLen"></param>
+        /// <returns></returns>
+        internal static byte[] UncompressRLEv10(byte[] data, int destLen)
         {
             uint offset = 0;
             int lenUnpacked = 0;
@@ -519,6 +531,71 @@ namespace UnpackMiColorFace.Helpers
                         // unique data
                         size = (byte)(control & 0x7F);
                         for (int i = 0; i < size; i++)
+                        {
+                            point = data.GetByteArray(offset, 4);
+                            dataNew.SetByteArray(lenUnpacked, point);
+                            lenUnpacked += 4;
+                            offset += 4;
+                        }
+                    }
+
+                } while (offset < data.Length);
+
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex);
+
+                Debug.WriteLine("offset: " + offset.ToString("X4"));
+                Debug.WriteLine("len: " + data.Length.ToString("X4"));
+                Debugger.Break();
+            }
+
+            return dataNew;
+        }
+
+        /// <summary>
+        /// 4 bytes record
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="destLen"></param>
+        /// <returns></returns>
+        internal static byte[] UncompressRLEv11(byte[] data, int destLen)
+        {
+            uint offset = 0;
+            int lenUnpacked = 0;
+            byte[] point = null;
+            byte[] dataNew = new byte[destLen];
+
+            try
+            {
+                do
+                {
+                    byte control = data[offset];
+                    offset += 1;
+
+                    //if (control == 0xFF) break;
+
+                    byte size = 0;
+                    if ((control & 0x80) == 0x80)
+                    {
+                        if (offset >= data.Length - 4) break;
+
+                        // repeated data
+                        size = (byte)(control & 0x7F);
+                        point = data.GetByteArray(offset, 4);
+                        for (int i = 0; i <= size; i++)
+                        {
+                            dataNew.SetByteArray(lenUnpacked, point);
+                            lenUnpacked += 4;
+                        }
+                        offset += 4;
+                    }
+                    else
+                    {
+                        // unique data
+                        size = (byte)(control & 0x7F);
+                        for (int i = 0; i <= size; i++)
                         {
                             point = data.GetByteArray(offset, 4);
                             dataNew.SetByteArray(lenUnpacked, point);

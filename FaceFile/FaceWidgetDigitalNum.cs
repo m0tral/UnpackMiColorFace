@@ -11,7 +11,10 @@ namespace UnpackMiColorFace.FaceFile
     public class FaceWidgetDigitalNum : FaceWidget
     {
         [XmlAttribute()]
-        public int Digits { get; set; }
+        public int Digits {
+            get;
+            set;
+        }
 
         [XmlAttribute()]
         public int Alignment { get; set; }
