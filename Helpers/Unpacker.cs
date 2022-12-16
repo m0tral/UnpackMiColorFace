@@ -88,7 +88,8 @@ namespace UnpackMiColorFace
                 uint offsetPreview = 0x20;
                 uint offset = 0xA8;
 
-                int count = data.GetWord(0x1C);
+                int count = data.GetByte(0x1C);
+                int shiftWords = data.GetByte(0x1D);
                 int subVersion = data.GetWord(0x1E);    // S1 Pro subversion or at location 0x04 ??
 
                 //if (subVersion >= 4)  // can be 4 or 6 currently
@@ -111,13 +112,15 @@ namespace UnpackMiColorFace
                 ProcessPreview(watchType, data, offsetPreview, path);
                 string title = data.GetUTF8String(0x68);
 
+                offset += (uint)(shiftWords * 0x04);
+
                 for (int c = 0; c < count; c++)
                 {
                     string imagesFolder = (c == 0
                         ? nameNoExt + @"\images"
                         :((c == 1)
                             ? nameNoExt + @"\AOD\images"
-                            : nameNoExt + $@"\images")
+                            : nameNoExt + $@"\images_{c}")
                         );
 
                     if (watchType == WatchType.Gen3)
@@ -864,6 +867,8 @@ namespace UnpackMiColorFace
 
         private static List<FaceImage> ProcessImageSingle(WatchType watchType, byte[] data, uint offset, string path)
         {
+            uint version = data.GetDWord(0x10);
+
             uint blockCount = data.GetDWord(offset);
             uint blockOffset = data.GetDWord(offset + 4);
 
@@ -891,13 +896,18 @@ namespace UnpackMiColorFace
 
                     if (bin.GetDWord(0) == 0) type = 4;
 
+                    if (watchType == WatchType.Gen2 && version == 0x800)
+                    {
+                        if (bin.GetByte(0) == 0) type = 4;
+                        if (bin.GetByte(0) == 3) type = 2;
+                    }
+
                     uint magic = bin.GetDWord(0x0C);
                     byte[] clut = null;
                     byte[] alfa = null;
                     byte[] pxls = bin.GetByteArray(0x0C, (uint)bin.Length - 0x0C);
 
-                    if (watchType == WatchType.Redmi
-                        || watchType == WatchType.Band7Pro)
+                    if (watchType == WatchType.Redmi || watchType == WatchType.Band7Pro)
                     {
                         if ((rle & 0x0F) == 0x04)
                         {
@@ -907,6 +917,17 @@ namespace UnpackMiColorFace
                             pxls = pxls.GetByteArray(0, pxlLen);
                         }
                     }
+
+                    //if (watchType == WatchType.Gen2 && version == 0x800)
+                    //{
+                    //    if ((rle & 0x0F) == 0x03)
+                    //    {
+                    //        type = 2;
+                    //        uint pxlLen = (uint)(width * 2 * height);
+                    //        alfa = pxls.GetByteArray(pxlLen, (uint)(width * height));
+                    //        pxls = pxls.GetByteArray(0, pxlLen);
+                    //    }
+                    //}
 
                     if (magic != 0x5AA521E0)
                     {
@@ -963,8 +984,11 @@ namespace UnpackMiColorFace
                         magik.Format = MagickFormat.Png32;
 
                         if (type == 2 &&
-                            (watchType == WatchType.Redmi
-                            || watchType == WatchType.Band7Pro))
+                                (
+                                    (watchType == WatchType.Redmi || watchType == WatchType.Band7Pro)
+                                    //|| (watchType == WatchType.Gen2 && version == 0x800)
+                                )
+                           )
                         {
                             int pixelIndex = 0;
                             int rowIndex = 0;
