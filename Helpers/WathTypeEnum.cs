@@ -18,10 +18,14 @@
         /// <summary>
         /// Redmi Watch 2, Poco Watch
         /// </summary>
-        Redmi = 5,
+        RedmiWatch2 = 5,
         /// <summary>
         /// Mi Band 7 Pro
         /// </summary>
         Band7Pro = 6,
+        /// <summary>
+        /// Redmi Watch 3, Poco Watch 2
+        /// </summary>
+        RedmiWatch3 = 7,
     }
 }

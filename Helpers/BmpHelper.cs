@@ -240,6 +240,9 @@ namespace UnpackMiColorFace.Helpers
                 case 4:
                     header = headerARgb32_GTR;
                     break;
+                case 2:
+                    header = headerRgb565;
+                    break;
                 case 1:
                 default:
                     header = headerIndex8v2;
@@ -490,12 +493,12 @@ namespace UnpackMiColorFace.Helpers
         }
 
         /// <summary>
-        /// 4 bytes record
+        /// 4/2 bytes record
         /// </summary>
         /// <param name="data"></param>
         /// <param name="destLen"></param>
         /// <returns></returns>
-        internal static byte[] UncompressRLEv10(byte[] data, int destLen)
+        internal static byte[] UncompressRLEv10(byte[] data, int destLen, byte recordSize = 4)
         {
             uint offset = 0;
             int lenUnpacked = 0;
@@ -514,17 +517,17 @@ namespace UnpackMiColorFace.Helpers
                     byte size = 0;
                     if ((control & 0x80) == 0x00)
                     {
-                        if (offset >= data.Length - 4) break;
+                        if (offset >= data.Length - recordSize) break;
 
                         // repeated data
                         size = (byte)(control & 0x7F);
-                        point = data.GetByteArray(offset, 4);
+                        point = data.GetByteArray(offset, recordSize);
                         for (int i = 0; i < size; i++)
                         {
                             dataNew.SetByteArray(lenUnpacked, point);
-                            lenUnpacked += 4;
+                            lenUnpacked += recordSize;
                         }
-                        offset += 4;
+                        offset += recordSize;
                     }
                     else
                     {
@@ -532,10 +535,10 @@ namespace UnpackMiColorFace.Helpers
                         size = (byte)(control & 0x7F);
                         for (int i = 0; i < size; i++)
                         {
-                            point = data.GetByteArray(offset, 4);
+                            point = data.GetByteArray(offset, recordSize);
                             dataNew.SetByteArray(lenUnpacked, point);
-                            lenUnpacked += 4;
-                            offset += 4;
+                            lenUnpacked += recordSize;
+                            offset += recordSize;
                         }
                     }
 
@@ -555,12 +558,12 @@ namespace UnpackMiColorFace.Helpers
         }
 
         /// <summary>
-        /// 4 bytes record
+        /// 4/2 bytes record
         /// </summary>
         /// <param name="data"></param>
         /// <param name="destLen"></param>
         /// <returns></returns>
-        internal static byte[] UncompressRLEv11(byte[] data, int destLen)
+        internal static byte[] UncompressRLEv11(byte[] data, int destLen, byte recordSize = 4)
         {
             uint offset = 0;
             int lenUnpacked = 0;
@@ -579,17 +582,17 @@ namespace UnpackMiColorFace.Helpers
                     byte size = 0;
                     if ((control & 0x80) == 0x80)
                     {
-                        if (offset >= data.Length - 4) break;
+                        if (offset >= data.Length - recordSize) break;
 
                         // repeated data
                         size = (byte)(control & 0x7F);
-                        point = data.GetByteArray(offset, 4);
+                        point = data.GetByteArray(offset, recordSize);
                         for (int i = 0; i <= size; i++)
                         {
                             dataNew.SetByteArray(lenUnpacked, point);
-                            lenUnpacked += 4;
+                            lenUnpacked += recordSize;
                         }
-                        offset += 4;
+                        offset += recordSize;
                     }
                     else
                     {
@@ -597,10 +600,10 @@ namespace UnpackMiColorFace.Helpers
                         size = (byte)(control & 0x7F);
                         for (int i = 0; i <= size; i++)
                         {
-                            point = data.GetByteArray(offset, 4);
+                            point = data.GetByteArray(offset, recordSize);
                             dataNew.SetByteArray(lenUnpacked, point);
-                            lenUnpacked += 4;
-                            offset += 4;
+                            lenUnpacked += recordSize;
+                            offset += recordSize;
                         }
                     }
 

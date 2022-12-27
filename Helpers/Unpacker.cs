@@ -104,7 +104,9 @@ namespace UnpackMiColorFace
                 if (width == 280)
                     watchType = WatchType.Gen3;
                 else if (width == 178 && height == 200)
-                    watchType = WatchType.Redmi;
+                    watchType = WatchType.RedmiWatch2;
+                else if (width == 234 && height == 270)
+                    watchType = WatchType.RedmiWatch3;
                 else if (width == 220 && height == 358)
                     watchType = WatchType.Band7Pro;
                 //}
@@ -417,7 +419,7 @@ namespace UnpackMiColorFace
                         if (wdgt.Align == 2    // center
                             && (watchType == WatchType.Gen2
                                 || watchType == WatchType.Gen3
-                                || watchType == WatchType.Redmi
+                                || watchType == WatchType.RedmiWatch2
                                 || watchType == WatchType.Band7Pro))
                         {
                             posX -= ((width + spacing) * maxLen) / 2;
@@ -538,7 +540,8 @@ namespace UnpackMiColorFace
             {
                 case WatchType.Gen2: return 466;
                 case WatchType.Gen3: return 480;
-                case WatchType.Redmi: return 360;
+                case WatchType.RedmiWatch2: return 360;
+                case WatchType.RedmiWatch3: return 450;
                 case WatchType.Band7Pro: return 456;
                 case WatchType.Gen1:
                 default: return 454;
@@ -551,7 +554,8 @@ namespace UnpackMiColorFace
             {
                 case WatchType.Gen2: return 466;
                 case WatchType.Gen3: return 480;
-                case WatchType.Redmi: return 320;
+                case WatchType.RedmiWatch2: return 320;
+                case WatchType.RedmiWatch3: return 390;
                 case WatchType.Band7Pro: return 280;
                 case WatchType.Gen1:
                 default: return 454;
@@ -785,7 +789,7 @@ namespace UnpackMiColorFace
             int type = bin[1];
 
             if (bin.GetDWord(0) == 0) type = 4;
-            if (watchType == WatchType.Redmi || watchType == WatchType.Band7Pro)
+            if (watchType == WatchType.RedmiWatch2 || watchType == WatchType.Band7Pro)
             {
                 type = bin[0] & 0xF;
                 if (type == 4) type = 2;
@@ -816,10 +820,10 @@ namespace UnpackMiColorFace
                     pxls = BmpHelper.UncompressRLEv20(cpr, decLen);
                 else
                 {
-                    if (watchType == WatchType.Redmi || watchType == WatchType.Band7Pro)
-                        pxls = BmpHelper.UncompressRLEv11(cpr, decLen);
+                    if (watchType == WatchType.RedmiWatch2 || watchType == WatchType.Band7Pro)
+                        pxls = BmpHelper.UncompressRLEv11(cpr, decLen, (byte)type);
                     else
-                        pxls = BmpHelper.UncompressRLEv10(cpr, decLen);
+                        pxls = BmpHelper.UncompressRLEv10(cpr, decLen, (byte)type);
                 }
 
                 string binFile = path + "preview_cpr.bin";
@@ -907,7 +911,7 @@ namespace UnpackMiColorFace
                     byte[] alfa = null;
                     byte[] pxls = bin.GetByteArray(0x0C, (uint)bin.Length - 0x0C);
 
-                    if (watchType == WatchType.Redmi || watchType == WatchType.Band7Pro)
+                    if (watchType == WatchType.RedmiWatch2 || watchType == WatchType.Band7Pro)
                     {
                         if ((rle & 0x0F) == 0x04)
                         {
@@ -953,10 +957,10 @@ namespace UnpackMiColorFace
                             pxls = BmpHelper.UncompressRLEv20(cpr, decLen);
                         else
                         {
-                            if (watchType == WatchType.Redmi || watchType == WatchType.Band7Pro)
-                                pxls = BmpHelper.UncompressRLEv11(cpr, decLen);
+                            if (watchType == WatchType.RedmiWatch2 || watchType == WatchType.Band7Pro)
+                                pxls = BmpHelper.UncompressRLEv11(cpr, decLen, (byte)type);
                             else
-                                pxls = BmpHelper.UncompressRLEv10(cpr, decLen);
+                                pxls = BmpHelper.UncompressRLEv10(cpr, decLen, (byte)type);
                         }
 
                         //string binFile = path + $"img_{idx:D4}.bin";
@@ -977,7 +981,7 @@ namespace UnpackMiColorFace
                     {
                         magik.Read(bmpFile);
                         magik.ColorType = ColorType.TrueColorAlpha;
-                        if (magic == 0x5AA521E0)
+                        if (magic == 0x5AA521E0 && watchType != WatchType.RedmiWatch3)
                             magik.Transparent(MagickColor.FromRgba(0, 0, 0, 0xFF));
                         else
                             magik.Transparent(MagickColor.FromRgba(0, 0, 0, 0));
@@ -985,7 +989,7 @@ namespace UnpackMiColorFace
 
                         if (type == 2 &&
                                 (
-                                    (watchType == WatchType.Redmi || watchType == WatchType.Band7Pro)
+                                    (watchType == WatchType.RedmiWatch2 || watchType == WatchType.Band7Pro)
                                     //|| (watchType == WatchType.Gen2 && version == 0x800)
                                 )
                            )
@@ -1068,7 +1072,8 @@ namespace UnpackMiColorFace
                     uint imgSize = (uint)width * 4 * (uint)height;
                     uint alfSize = 0;
 
-                    if (watchType == WatchType.Redmi
+                    if (watchType == WatchType.RedmiWatch2
+                        || watchType == WatchType.RedmiWatch3
                         || watchType == WatchType.Band7Pro)
                     {
                         if ((rle & 0x0F) == 0x04)
@@ -1076,6 +1081,11 @@ namespace UnpackMiColorFace
                             type = 2;
                             imgSize = (uint)width * 2 * (uint)height;
                             alfSize = (uint)width * (uint)height;
+                        }
+                        if (watchType == WatchType.RedmiWatch3 && (rle & 0x0F) == 0x03) {
+                            type = 2;
+                            imgSize = (uint)width * 2 * (uint)height;
+                            alfSize = 0;
                         }
                     }
 
@@ -1124,7 +1134,7 @@ namespace UnpackMiColorFace
                                 pxls = BmpHelper.UncompressRLEv20(cpr, decLen);
                             else
                             {
-                                if (watchType == WatchType.Redmi || watchType == WatchType.Band7Pro)
+                                if (watchType == WatchType.RedmiWatch2 || watchType == WatchType.Band7Pro)
                                     pxls = BmpHelper.UncompressRLEv11(cpr, decLen);
                                 else
                                     pxls = BmpHelper.UncompressRLEv10(cpr, decLen);
@@ -1141,7 +1151,7 @@ namespace UnpackMiColorFace
                             Array.Copy(pxls, pxlsFull, pxls.Length);
 
                             if (type == 2 &&
-                                (watchType == WatchType.Redmi || watchType == WatchType.Band7Pro))
+                                (watchType == WatchType.RedmiWatch2 || watchType == WatchType.Band7Pro))
                             {
                                 alfa = new byte[alfSize];
                                 Array.Copy(bin.GetByteArray(startOffset + imgSize, alfSize), alfa, alfSize);
@@ -1171,7 +1181,7 @@ namespace UnpackMiColorFace
                             magik.Format = MagickFormat.Png32;
 
                             if (type == 2 &&
-                                (watchType == WatchType.Redmi
+                                (watchType == WatchType.RedmiWatch2
                                 || watchType == WatchType.Band7Pro))
                             {
                                 int pixelIndex = 0;
