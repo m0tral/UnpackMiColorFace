@@ -434,7 +434,7 @@ namespace UnpackMiColorFace
                             Width = imgl.Width,
                             Height = imgl.Height,
                             Digits = digits,
-                            Alignment = wdgt.Align,
+                            Alignment = GetTextAlignment(wdgt.Align),
                             Alpha = 0xFF,
                             DataSrcValue = $"{wdgt.Shape:X2}{wdgt.DataSrcDisplay:X2}",
                             BitmapList = string.Join("|", imgl.NameList),
@@ -532,6 +532,13 @@ namespace UnpackMiColorFace
             File.WriteAllText($"{facefile}.fprj", xml);
 
             return face;
+        }
+
+        private static int GetTextAlignment(byte align)
+        {
+            if (align == 2) return 1;
+            if (align == 1) return 2;
+            return 0;
         }
 
         private static int GetScreenHeight(WatchType watchType)
@@ -861,7 +868,7 @@ namespace UnpackMiColorFace
                 magik.Write(pngFile);
             }
 
-            File.Delete(bmpFile);
+            //File.Delete(bmpFile);
 
             if (!Directory.Exists(Path.GetDirectoryName(pngFileCopy)))
                 Directory.CreateDirectory(Path.GetDirectoryName(pngFileCopy));

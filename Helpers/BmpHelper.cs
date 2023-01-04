@@ -198,6 +198,7 @@ namespace UnpackMiColorFace.Helpers
             }
 
             int newWidth = 0;
+            int oWidth = width;
 
             if (type != 4)
                 data = AlignRowData(data, width, height, type, out newWidth);
@@ -224,7 +225,7 @@ namespace UnpackMiColorFace.Helpers
                 data.SetDWord(0x22, (uint)lenRaw);
             }
 
-            data.SetDWord(0x12, (uint)width);
+            data.SetDWord(0x12, (uint)oWidth);
             data.SetDWord(0x16, (uint)height);
 
             return data;
@@ -328,11 +329,14 @@ namespace UnpackMiColorFace.Helpers
         private static byte[] AlignRowData(byte[] src, int width, int height, int type, out int dstWidth)
         {
             uint rowLen = (uint)(width * type);
-            dstWidth = width.GetDWordAligned();
-            uint rowLenNew = (uint)(dstWidth * type);
-
-            if (rowLen == rowLenNew)
+            if (rowLen == rowLen.GetDWordAligned() && rowLen == src.Length)
+            {
+                dstWidth = width;
                 return src;
+            }
+
+            uint rowLenNew = rowLen.GetDWordAligned();
+            dstWidth = (int)(rowLenNew / type);
 
             byte[] dst = new byte[rowLenNew * height];
             uint srcOffset = 0;

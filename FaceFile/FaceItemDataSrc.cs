@@ -10,18 +10,18 @@ namespace UnpackMiColorFace.FaceFile
     {
         public const string Hour = "0811";
         public const string HourLow = "0911";
-        public const string HourHigh = "0A11";
+        public const string HourHigh = "10911"; // 0A11
         public const string Minute = "1011";
         public const string MinuteLow = "1111";
         public const string MinuteHigh = "1211";
         public const string Second = "1811";
         public const string SecondLow = "1911";
-        public const string SecondHigh = "1A11";
+        public const string SecondHigh = "11911"; //1A11
 
         public const string Month = "1012";
         public const string Day = "1812";
         public const string DayLow = "1912";
-        public const string DayHigh = "1A12";
+        public const string DayHigh = "11912";    //1A12
         public const string Weekday = "2012";
 
         public const string Steps = "0821";
