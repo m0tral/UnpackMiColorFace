@@ -788,8 +788,11 @@ namespace UnpackMiColorFace
             int rle = bin[0];
             int type = bin[1];
 
-            if (bin.GetDWord(0) == 0) type = 4;
-            if (watchType == WatchType.RedmiWatch2 || watchType == WatchType.Band7Pro)
+            if (bin.GetDWord(0) == 0)
+            {
+                type = 4;
+            }
+            else if (watchType == WatchType.RedmiWatch2 || watchType == WatchType.Band7Pro)
             {
                 type = bin[0] & 0xF;
                 if (type == 4) type = 2;
