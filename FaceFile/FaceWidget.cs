@@ -40,6 +40,8 @@ namespace UnpackMiColorFace.FaceFile
         public int DataSrcDisplay { get; set; }
 
         [XmlIgnore]
+        public byte[] RawData { get; internal set; }
+        [XmlIgnore]
         public uint TargetId { get; internal set; }
         [XmlIgnore]
         public uint Id { get; internal set; }

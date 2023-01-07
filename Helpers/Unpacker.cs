@@ -441,12 +441,22 @@ namespace UnpackMiColorFace
                         });
                     }
                     else if (wdgt.TypeId == 0x02) {
+
+                        bool hasCustomValues = wdgt.RawData.GetWord(0x0c) == 0x200;
                         string bmpList = "";
                         for (int x = 0; x < imgl.NameList.Length; x++)
                         {
+                            int value = 0;
+                            try
+                            {
+                                if (hasCustomValues)
+                                    value = (int)wdgt.RawData.GetDWord(0x10 + (x * 4));
+                            }
+                            catch {}
+
                             if (bmpList.Length > 0)
                                 bmpList += "|";
-                            bmpList += $"({x}):{imgl.NameList[x]}";
+                            bmpList += $"({(hasCustomValues ? value : x)}):{imgl.NameList[x]}";
                         }
                         face.Screen.Widgets.Add(new FaceWidgetImageList()
                         {
@@ -637,10 +647,11 @@ namespace UnpackMiColorFace
                         || bin.GetWord(0) == 0x111A)
                     {
                         digits = 1;
-                    }                        
+                    }
 
                     lst.Add(new FaceWidget()
                     {
+                        RawData = bin,
                         Shape = bin[0],
                         DataSrcDisplay = bin[1],
                         X = bin.Length >= 0x20 ? bin.GetWord(0x14) : 0,

@@ -172,6 +172,11 @@ namespace UnpackMiColorFace.Helpers
             return data;
         }
 
+        public static uint GetDWord(this byte[] data, int offset = 0, uint bigEndian = 0)
+        {
+            return data.GetDWord((uint)offset, bigEndian);
+        }
+
         public static uint GetDWord(this byte[] data, uint offset = 0, uint bigEndian = 0)
         {
             byte[] size = new byte[4];
