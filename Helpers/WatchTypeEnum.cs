@@ -27,5 +27,9 @@
         /// Redmi Watch 3, Poco Watch 2
         /// </summary>
         RedmiWatch3 = 7,
+        /// <summary>
+        /// Redmi Band Pro
+        /// </summary>
+        RedmiBandPro = 8,
     }
 }

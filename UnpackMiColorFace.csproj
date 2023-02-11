@@ -71,6 +71,7 @@
     <Compile Include="Helpers\FaceImage.cs" />
     <Compile Include="Helpers\FaceImageList.cs" />
     <Compile Include="Helpers\Unpacker.cs" />
+    <Compile Include="Helpers\WatchScreen.cs" />
     <Compile Include="Helpers\WatchTypeEnum.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
