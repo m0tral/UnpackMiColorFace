@@ -1000,6 +1000,8 @@ namespace UnpackMiColorFace
                         type = bin[0x10] & 0x0F;
                         int decLen = (int)bin.GetDWord(0x10) >> 4;
 
+                        Console.WriteLine($"got compressed image: {dataOfs:X8}, type:{type:X2}");
+
                         if (rle == 0x10)
                             pxls = BmpHelper.UncompressRLEv20(cpr, decLen);
                         else
@@ -1139,6 +1141,9 @@ namespace UnpackMiColorFace
 
                     uint arrCount = bin[1];
                     uint maxSize = bin.GetDWord(8) + 0x0C;
+                    uint magic = bin.GetDWord(0x0C + (4 * arrCount));
+
+                    Console.WriteLine($"got compressed imageList: {dataOfs:X8}, type:{type:X2}");
 
                     List<string> nameList = new List<string>();
 
@@ -1158,8 +1163,6 @@ namespace UnpackMiColorFace
                         byte[] pxls = null;
                         byte[] pxlsFull = null;
                         byte[] alfa = null;
-
-                        uint magic = bin.GetDWord(0x0C + (4 * arrCount));
 
                         if (magic == 0x5AA521E0)
                         {
