@@ -248,6 +248,7 @@ namespace UnpackMiColorFace
                                     && (watchType == WatchType.Gen2
                                         || watchType == WatchType.Gen3
                                         || watchType == WatchType.RedmiWatch2
+                                        || watchType == WatchType.RedmiWatch3
                                         || watchType == WatchType.Band7Pro))
                                 {
                                     posX -= (((width + spacing) * maxLen) / 2);
@@ -430,6 +431,7 @@ namespace UnpackMiColorFace
                                 || watchType == WatchType.Gen3
                                 || watchType == WatchType.RedmiBandPro
                                 || watchType == WatchType.RedmiWatch2
+                                || watchType == WatchType.RedmiWatch3
                                 || watchType == WatchType.Band7Pro))
                         {
                             posX -= ((width + spacing) * maxLen) / 2;
@@ -439,6 +441,7 @@ namespace UnpackMiColorFace
                                 || watchType == WatchType.Gen3
                                 || watchType == WatchType.RedmiBandPro
                                 || watchType == WatchType.RedmiWatch2
+                                || watchType == WatchType.RedmiWatch3
                                 || watchType == WatchType.Band7Pro))
 
                         {
