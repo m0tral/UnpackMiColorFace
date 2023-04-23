@@ -8,7 +8,7 @@ namespace UnpackMiColorFace.Helpers
 {
     internal class WatchScreen
     {
-        internal static int GetScreenHeight(int watchType)
+        internal static int GetScreenHeight(WatchType watchType)
         {
             switch ((WatchType)watchType)
             {
@@ -17,12 +17,14 @@ namespace UnpackMiColorFace.Helpers
                 case WatchType.RedmiWatch2: return 360;
                 case WatchType.RedmiWatch3: return 450;
                 case WatchType.Band7Pro: return 456;
+                case WatchType.MiBand8: return 490;
+                case WatchType.RedmiBandPro: return 456;
                 case WatchType.Gen1:
                 default: return 454;
             }
         }
 
-        internal static int GetScreenWidth(int watchType)
+        internal static int GetScreenWidth(WatchType watchType)
         {
             switch ((WatchType)watchType)
             {
@@ -31,6 +33,8 @@ namespace UnpackMiColorFace.Helpers
                 case WatchType.RedmiWatch2: return 320;
                 case WatchType.RedmiWatch3: return 390;
                 case WatchType.Band7Pro: return 280;
+                case WatchType.MiBand8: return 192;
+                case WatchType.RedmiBandPro: return 368;
                 case WatchType.Gen1:
                 default: return 454;
             }

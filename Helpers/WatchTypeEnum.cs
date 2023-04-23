@@ -31,5 +31,9 @@
         /// Redmi Band Pro
         /// </summary>
         RedmiBandPro = 8,
+        /// <summary>
+        /// Mi Band 8
+        /// </summary>
+        MiBand8 = 9,
     }
 }

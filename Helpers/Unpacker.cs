@@ -83,7 +83,7 @@ namespace UnpackMiColorFace
                 if (File.Exists(path + "source.bin"))
                     File.Delete(path + "source.bin");
 
-                File.Copy(filename, path + "source.bin");
+                //File.Copy(filename, path + "source.bin");
 
                 uint offsetPreview = 0x20;
                 uint offset = 0xA8;
@@ -172,7 +172,9 @@ namespace UnpackMiColorFace
             int width = data.GetWord(offsetPreviewImg + 4);
             int height = data.GetWord(offsetPreviewImg + 6);
 
-            if (width == 280)
+            watchType = WatchType.Gen2;
+
+            if (width == 280 && height == 280)
                 watchType = WatchType.Gen3;
             else if (width == 178 && height == 200)
                 watchType = WatchType.RedmiWatch2;
@@ -182,14 +184,16 @@ namespace UnpackMiColorFace
                 watchType = WatchType.Band7Pro;
             else if (width == 110 && height == 208)
                 watchType = WatchType.RedmiBandPro;
+            else if (width == 122 && height == 310)
+                watchType = WatchType.MiBand8;
             return watchType;
         }
 
         private static void BuildPreview(FaceProject face, WatchType watchType, string imagesFolder, string facefile)
         {
             int index = 0;
-            int displayWidth = GetScreenWidth(watchType);
-            int displayHeight = GetScreenHeight(watchType);
+            int displayWidth = WatchScreen.GetScreenWidth(watchType);
+            int displayHeight = WatchScreen.GetScreenHeight(watchType);
 
             using (var preview = new MagickImage(MagickColor.FromRgb(0, 0, 0), displayWidth, displayHeight))
             {
@@ -432,6 +436,7 @@ namespace UnpackMiColorFace
                                 || watchType == WatchType.RedmiBandPro
                                 || watchType == WatchType.RedmiWatch2
                                 || watchType == WatchType.RedmiWatch3
+                                || watchType == WatchType.MiBand8
                                 || watchType == WatchType.Band7Pro))
                         {
                             posX -= ((width + spacing) * maxLen) / 2;
@@ -442,6 +447,7 @@ namespace UnpackMiColorFace
                                 || watchType == WatchType.RedmiBandPro
                                 || watchType == WatchType.RedmiWatch2
                                 || watchType == WatchType.RedmiWatch3
+                                || watchType == WatchType.MiBand8
                                 || watchType == WatchType.Band7Pro))
 
                         {
@@ -506,8 +512,8 @@ namespace UnpackMiColorFace
                                     Name = $"analogClock_{idx:D2}",
                                     X = 0,
                                     Y = 0,
-                                    Width = GetScreenWidth(watchType), 
-                                    Height = GetScreenHeight(watchType),
+                                    Width = WatchScreen.GetScreenWidth(watchType), 
+                                    Height = WatchScreen.GetScreenHeight(watchType),
                                     Alpha = 0xFF,                                    
                                 });
                             }
@@ -572,36 +578,6 @@ namespace UnpackMiColorFace
             if (align == 2) return 1;
             if (align == 1) return 2;
             return 0;
-        }
-
-        private static int GetScreenHeight(WatchType watchType)
-        {
-            switch (watchType)
-            {
-                case WatchType.Gen2: return 466;
-                case WatchType.Gen3: return 480;
-                case WatchType.RedmiWatch2: return 360;
-                case WatchType.RedmiWatch3: return 450;
-                case WatchType.Band7Pro: return 456;
-                case WatchType.RedmiBandPro: return 368;
-                case WatchType.Gen1:
-                default: return 454;
-            }
-        }
-
-        private static int GetScreenWidth(WatchType watchType)
-        {
-            switch (watchType)
-            {
-                case WatchType.Gen2: return 466;
-                case WatchType.Gen3: return 480;
-                case WatchType.RedmiWatch2: return 320;
-                case WatchType.RedmiWatch3: return 390;
-                case WatchType.Band7Pro: return 280;
-                case WatchType.RedmiBandPro: return 194;
-                case WatchType.Gen1:
-                default: return 454;
-            }
         }
 
         private static List<FaceElement> ProcessElements(byte[] data, uint offset, string path)
@@ -875,10 +851,10 @@ namespace UnpackMiColorFace
                 }
 
                 string binFile = path + "preview_cpr.bin";
-                File.WriteAllBytes(binFile, cpr);
+                //File.WriteAllBytes(binFile, cpr);
 
                 binFile = path + "preview_dec.bin";
-                File.WriteAllBytes(binFile, pxls);
+                //File.WriteAllBytes(binFile, pxls);
             }
 
             byte[] bmp = null;
