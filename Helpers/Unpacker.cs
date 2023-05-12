@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text;
 using UnpackMiColorFace.FaceFile;
 using UnpackMiColorFace.Helpers;
 
@@ -125,6 +126,15 @@ namespace UnpackMiColorFace
 
                     pathImages = dir.FullName + "\\";
 
+                    // app path
+                    string pathApp = nameNoExt + @"\app";
+
+                    if (Directory.Exists(pathApp))
+                        dir = new DirectoryInfo(pathApp);
+                    else
+                        dir = Directory.CreateDirectory(pathApp);
+                    pathApp = dir.FullName + "\\";
+
                     List<FaceElement> lste = null;
                     List<FaceWidget> lstw = null;
                     List<FaceImage> lsti = null;
@@ -143,6 +153,8 @@ namespace UnpackMiColorFace
                             lsti = ProcessImageSingle(watchType, data, offset, pathImages);
                         if (i == 3)
                             lstil = ProcessImageList(watchType, data, offset, pathImages);
+                        if (i == 5)
+                            ProcessAppData(watchType, data, offset, pathApp);
                         if (i == 7)
                             lstw = ProcessWidgets(data, offset, path);
 
@@ -162,6 +174,41 @@ namespace UnpackMiColorFace
 
                     var face = BuildFaceFile(title, watchType, lste, lsti, lstil, lstw, path + facefile);
                     BuildPreview(face, watchType, imagesFolder, path + facefile);
+                }
+            }
+        }
+
+        private static void ProcessAppData(WatchType watchType, byte[] data, uint offset, string path)
+        {
+            uint blockCount = data.GetDWord(offset);
+            uint blockOffset = data.GetDWord(offset + 4);
+
+            Debug.WriteLine($"offset: {offset:X8}");
+
+            if (watchType == WatchType.MiBand8)
+            {
+                offset = blockOffset;
+                for (int i = 0; i < blockCount; i++)
+                {
+                    uint idx = data.GetWord(offset);
+                    uint id = data.GetDWord(offset);
+
+                    uint dataOfs = data.GetDWord(offset + 0x08);
+                    uint dataLen = data.GetDWord(offset + 0x0C);
+
+                    byte[] bin = data.GetByteArray(dataOfs, dataLen);
+
+                    //string appFile = path + $"app_{idx:D4}.bin";
+                    //File.WriteAllBytes(appFile, bin);
+
+                    var fileSize = bin.GetDWord(0) & 0xFFFFFF;
+                    uint filenameLen = bin[3];
+                    string filename = Encoding.ASCII.GetString(bin.GetByteArray(0x14, filenameLen));
+
+                    string appFile = path + filename;
+                    File.WriteAllBytes(appFile, bin.GetByteArray(0x14 + filenameLen, (uint)bin.Length - 0x14 - filenameLen));
+
+                    offset += 0x10;
                 }
             }
         }
@@ -882,7 +929,7 @@ namespace UnpackMiColorFace
                 magik.Write(pngFile);
             }
 
-            //File.Delete(bmpFile);
+            File.Delete(bmpFile);
 
             if (!Directory.Exists(Path.GetDirectoryName(pngFileCopy)))
                 Directory.CreateDirectory(Path.GetDirectoryName(pngFileCopy));
