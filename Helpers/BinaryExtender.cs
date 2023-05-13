@@ -390,11 +390,16 @@ namespace UnpackMiColorFace.Helpers
             return data[offset];
         }
 
-        public static byte[] GetByteArray(this byte[] data, uint offset = 0, uint len = 1)
+        public static byte[] GetByteArray(this byte[] src, uint offset = 0, uint len = 1)
         {
-            byte[] size = new byte[len];
-            Array.Copy(data, offset, size, 0, size.Length);
-            return size;
+            uint copySize = len;
+
+            if (offset + copySize > src.Length)
+                copySize = (uint)src.Length - offset;
+
+            byte[] dst = new byte[len];
+            Array.Copy(src, offset, dst, 0, copySize);
+            return dst;
         }
 
         public static void SetByteArray(this byte[] data, int offset, byte[] src)

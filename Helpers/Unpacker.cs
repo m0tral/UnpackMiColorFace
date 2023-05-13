@@ -139,6 +139,8 @@ namespace UnpackMiColorFace
                     List<FaceWidget> lstw = null;
                     List<FaceImage> lsti = null;
                     List<FaceImageList> lstil = null;
+                    List<FaceAction> lsta = null;
+                    List<FaceAppItem> lstApp = null;
 
                     // get back image + preview
                     uint backImageId = data.GetDWord(offset);
@@ -153,10 +155,13 @@ namespace UnpackMiColorFace
                             lsti = ProcessImageSingle(watchType, data, offset, pathImages);
                         if (i == 3)
                             lstil = ProcessImageList(watchType, data, offset, pathImages);
-                        if (i == 5)
-                            ProcessAppData(watchType, data, offset, pathApp);
-                        if (i == 7)
+                        if (i == 5) // apps
+                            lstApp = ProcessAppData(watchType, data, offset, pathApp);
+                        if (i == 7) // widgets
                             lstw = ProcessWidgets(data, offset, path);
+                        if (i == 9) // action buttons
+                            lsta = ProcessAction(data, offset, path);
+
 
                         offset += 8;
                     }
@@ -172,18 +177,20 @@ namespace UnpackMiColorFace
                     if (watchType == WatchType.Gen3 && isAOD)
                         facefile = $"{nameNoExt}_AOD";
 
-                    var face = BuildFaceFile(title, watchType, lste, lsti, lstil, lstw, path + facefile);
+                    var face = BuildFaceFile(title, watchType, lste, lsti, lstil, lstw, lstApp, lsta, path + facefile);
                     BuildPreview(face, watchType, imagesFolder, path + facefile);
                 }
             }
         }
 
-        private static void ProcessAppData(WatchType watchType, byte[] data, uint offset, string path)
+        private static List<FaceAppItem> ProcessAppData(WatchType watchType, byte[] data, uint offset, string path)
         {
             uint blockCount = data.GetDWord(offset);
             uint blockOffset = data.GetDWord(offset + 4);
 
             Debug.WriteLine($"offset: {offset:X8}");
+
+            var lst = new List<FaceAppItem>();
 
             if (watchType == WatchType.MiBand8)
             {
@@ -196,21 +203,31 @@ namespace UnpackMiColorFace
                     uint dataOfs = data.GetDWord(offset + 0x08);
                     uint dataLen = data.GetDWord(offset + 0x0C);
 
+                    var fileSize = data.GetDWord(dataOfs) & 0xFFFFFF;
+                    uint filenameLen = data[dataOfs + 3];
+                    dataLen = 0x14 + filenameLen + fileSize;
+
                     byte[] bin = data.GetByteArray(dataOfs, dataLen);
 
                     //string appFile = path + $"app_{idx:D4}.bin";
                     //File.WriteAllBytes(appFile, bin);
 
-                    var fileSize = bin.GetDWord(0) & 0xFFFFFF;
-                    uint filenameLen = bin[3];
                     string filename = Encoding.ASCII.GetString(bin.GetByteArray(0x14, filenameLen));
 
                     string appFile = path + filename;
-                    File.WriteAllBytes(appFile, bin.GetByteArray(0x14 + filenameLen, (uint)bin.Length - 0x14 - filenameLen));
+                    File.WriteAllBytes(appFile, bin.GetByteArray(0x14 + filenameLen, fileSize));
+
+                    lst.Add(new FaceAppItem()
+                    {
+                        Id = id,
+                        Name = filename
+                    });
 
                     offset += 0x10;
                 }
             }
+
+            return lst;
         }
 
         private static WatchType GetWatchType(byte[] data, WatchType watchType, uint offsetPreview)
@@ -427,7 +444,9 @@ namespace UnpackMiColorFace
 
         private static FaceProject BuildFaceFile(string title, WatchType watchType,
                 List<FaceElement> lste, List<FaceImage> lsti,
-                List<FaceImageList> lstil, List<FaceWidget> lstw, string facefile)
+                List<FaceImageList> lstil, List<FaceWidget> lstw,
+                List<FaceAppItem> lstApp, List<FaceAction> lsta,
+                string facefile)
         {
             FaceProject face = new FaceProject();
             face.DeviceType = (int)watchType;
@@ -604,9 +623,33 @@ namespace UnpackMiColorFace
                         }
                     }
                 }
+                else if (e.TargetId >> 24 == 09)
+                {
+                    var action = lsta.Find(c => c.Id == e.TargetId);
+
+                    string nameAction = "";
+                    if (action.ActionId == 0x23721400)
+                    {
+                        var appItem = lstApp.Find(c => c.Id == action.AppId);
+                        if (appItem != null)
+                            nameAction = $"_[{appItem.Name}]";
+                    }
+
+                    face.Screen.Widgets.Add(new FaceWidgetImage()
+                    {
+                        Shape = 30,
+                        Name = $"btn_{idx:D2}{nameAction}",
+                        X = e.PosX,
+                        Y = e.PosY,
+                        //Width = img.Width,
+                        //Height = img.Height,
+                        Alpha = 0xFF,
+                        Bitmap = action.ImageName,
+                    });
+                }
 
                 idx++;
-            }            
+            }
 
             string xml = face.Serialize();
             xml = xml.Replace("<FaceProject", "\r\n<FaceProject");
@@ -625,6 +668,49 @@ namespace UnpackMiColorFace
             if (align == 2) return 1;
             if (align == 1) return 2;
             return 0;
+        }
+
+        private static List<FaceAction> ProcessAction(byte[] data, uint offset, string path)
+        {
+            uint blockCount = data.GetDWord(offset);
+            uint blockOffset = data.GetDWord(offset + 4);
+
+            var lst = new List<FaceAction>();
+            offset = blockOffset;
+
+            for (int i = 0; i < blockCount; i++)
+            {
+                try
+                {
+                    uint idx = data.GetWord(offset);
+                    uint id = data.GetDWord(offset);
+
+                    uint dataOfs = data.GetDWord(offset + 0x08);
+                    uint dataLen = data.GetDWord(offset + 0x0C);
+
+                    byte[] bin = data.GetByteArray(dataOfs, dataLen);
+                    //File.WriteAllBytes(path + $"img_{idx:D4}.bin", bin);
+
+                    uint imageId = bin.GetDWord(0x20) & 0xFF;
+
+                    lst.Add(new FaceAction()
+                    {
+                        RawData = bin,
+                        Id = id,
+                        ImageName = $"img_{imageId:D4}.png",
+                        ActionId = bin.GetDWord(0x28),
+                        AppId = bin.GetDWord(0x2C),
+                    });
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("action processing err: " + ex);
+                }
+
+                offset += 0x10;
+            }
+
+            return lst;
         }
 
         private static List<FaceElement> ProcessElements(byte[] data, uint offset, string path)

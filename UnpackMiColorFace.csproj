@@ -67,6 +67,8 @@
     <Compile Include="FaceFile\WidgetFactory.cs" />
     <Compile Include="Helpers\BinaryExtender.cs" />
     <Compile Include="Helpers\BmpHelper.cs" />
+    <Compile Include="FaceFile\FaceAction.cs" />
+    <Compile Include="FaceFile\FaceAppItem.cs" />
     <Compile Include="Helpers\FaceElement.cs" />
     <Compile Include="Helpers\FaceImage.cs" />
     <Compile Include="Helpers\FaceImageList.cs" />
