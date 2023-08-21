@@ -2,6 +2,9 @@
 <Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
+    <LangVersion>8.0</LangVersion>
+  </PropertyGroup>
+  <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{E1CD874F-2661-46E5-B04D-193B13BD4BDE}</ProjectGuid>
@@ -9,7 +12,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>UnpackMiColorFace</RootNamespace>
     <AssemblyName>UnpackMiColorFace</AssemblyName>
-    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <TargetFrameworkProfile />
@@ -23,6 +26,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -32,11 +36,13 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Magick.NET-Q16-AnyCPU, Version=7.1.0.0, Culture=neutral, PublicKeyToken=2004825badfa91ec, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>lib\Magick.NET-Q16-AnyCPU.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -49,32 +55,20 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="FaceFile\FaceItemDataSrc.cs" />
-    <Compile Include="FaceFile\FaceProject.cs" />
-    <Compile Include="FaceFile\FaceScreen.cs" />
-    <Compile Include="FaceFile\FaceWidget.cs" />
-    <Compile Include="FaceFile\FaceWidgetAnalogClock.cs" />
-    <Compile Include="FaceFile\FaceWidgetCircleProgressPlus.cs" />
-    <Compile Include="FaceFile\FaceWidgetCircleProgress.cs" />
-    <Compile Include="FaceFile\FaceWidgetConcatenate.cs" />
-    <Compile Include="FaceFile\FaceWidgetCircularGauge.cs" />
-    <Compile Include="FaceFile\FaceWidgetImageCacheList.cs" />
-    <Compile Include="FaceFile\FaceWidgetTextPlus.cs" />
-    <Compile Include="FaceFile\FaceWidgetContainer.cs" />
-    <Compile Include="FaceFile\FaceWidgetDigitalNum.cs" />
-    <Compile Include="FaceFile\FaceWidgetImage.cs" />
-    <Compile Include="FaceFile\FaceWidgetImageList.cs" />
-    <Compile Include="FaceFile\WidgetFactory.cs" />
-    <Compile Include="Helpers\BinaryExtender.cs" />
+    <Compile Include="Decompiler\DecompilerFactory.cs" />
+    <Compile Include="Decompiler\FaceV1Decompiler.cs" />
+    <Compile Include="Decompiler\FaceV2Decompiler.cs" />
+    <Compile Include="Decompiler\FaceV3Decompiler.cs" />
+    <Compile Include="FaceFileV3\FaceFileV3DecoderFactory.cs" />
+    <Compile Include="FaceFileV3\FaceRedmiWatch3ActiveDecoder.cs" />
+    <Compile Include="FaceFileV3\IFaceFileV3Decoder.cs" />
+    <Compile Include="Helpers\FilenameHelper.cs" />
+    <Compile Include="Decompiler\IFaceDecompiler.cs" />
     <Compile Include="Helpers\BmpHelper.cs" />
-    <Compile Include="FaceFile\FaceAction.cs" />
-    <Compile Include="FaceFile\FaceAppItem.cs" />
     <Compile Include="Helpers\FaceElement.cs" />
     <Compile Include="Helpers\FaceImage.cs" />
     <Compile Include="Helpers\FaceImageList.cs" />
     <Compile Include="Helpers\Unpacker.cs" />
-    <Compile Include="Helpers\WatchScreen.cs" />
-    <Compile Include="Helpers\WatchTypeEnum.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
@@ -83,6 +77,16 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Lib\Magick.NET-Q16-AnyCPU.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Lib\XiaomiWatch.Common.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\XiaomiWatch.Common\XiaomiWatch.Common.csproj">
+      <Project>{8715a0b0-e2c0-4a22-bf44-2992efb274af}</Project>
+      <Name>XiaomiWatch.Common</Name>
+      <Private>False</Private>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

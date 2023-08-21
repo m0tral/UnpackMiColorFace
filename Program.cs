@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -11,12 +12,18 @@ namespace UnpackMiColorFace
     class Program
     {
         public const string library = "UnpackMiColorFace.Lib.Magick.NET-Q16-AnyCPU.dll";
+        public const string libraryCommon = "UnpackMiColorFace.Lib.XiaomiWatch.Common.dll";
 
         [STAThread]
         static void Main(string[] args)
         {
             AppDomain.CurrentDomain.AssemblyResolve += new ResolveEventHandler(AssemblyResolver);
+            MainBody(args);
+        }
 
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        static void MainBody(string[] args)
+        {
             if (args.Count() == 0)
             {
                 Console.WriteLine("usage: UnpackMiColorFace example.bin");
@@ -53,6 +60,9 @@ namespace UnpackMiColorFace
             Assembly asm = null;
 
             asm = LoadAssembly(args, "Magick", library);
+            if (asm != null) return asm;
+
+            asm = LoadAssembly(args, "XiaomiWatch", libraryCommon);
             if (asm != null) return asm;
 
             return asm;
