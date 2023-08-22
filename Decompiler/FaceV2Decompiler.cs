@@ -13,6 +13,7 @@ namespace UnpackMiColorFace.Decompiler
     internal class FaceV2Decompiler : IFaceDecompiler
     {
         private FilenameHelper filenameHelper;
+        private const uint OffsetTitle = 0x68;
 
         public FaceV2Decompiler(FilenameHelper filenameHelper)
         {
@@ -37,7 +38,6 @@ namespace UnpackMiColorFace.Decompiler
             int subVersion = data.GetWord(0x1E);    // S1 Pro subversion or at location 0x04 ??
 
             ProcessPreview(watchType, data, offsetPreview, path);
-            string title = data.GetUTF8String(0x68);
 
             offset += (uint)(shiftWords * 0x04);
 
@@ -105,8 +105,46 @@ namespace UnpackMiColorFace.Decompiler
                 if (watchType == WatchType.Gen3 && isAOD)
                     facefile = $"{filenameHelper.NameNoExt}_AOD";
 
+                string title = GetFaceTitle(data, watchType);
+
                 var face = BuildFaceFile(title, watchType, lste, lsti, lstil, lstw, lstApp, lsta, path + facefile);
                 BuildPreview(face, watchType, imagesFolder, path + facefile);
+            }
+        }
+
+        private string GetFaceTitle(byte[] data, WatchType watchType)
+        {
+            uint titleData = data.GetDWord(OffsetTitle);
+            if (titleData == 0xFFFFFFFF)
+            {
+                int titleType = data.GetByte(OffsetTitle + 7);
+                uint offsetTitle = data.GetDWord(OffsetTitle + 0x0c);
+                uint dataSize = data.GetDWord(OffsetTitle + 0x10);
+
+                if (titleType == 6)
+                {
+                    uint titleSignature = data.GetDWord(offsetTitle);
+                    if (titleSignature == 0x07)
+                    {
+                        int count = 3;
+                        uint offsetCurrText = (uint)(offsetTitle + 8 + (count * 4));
+                        var titleList = new string[count];
+                        for (int i = 0; i < count; i++)
+                        {
+                            uint currLen = data.GetDWord((uint)(offsetTitle + 8 + (i * 4)));
+                            titleList[i] = data.GetUTF8String(offsetCurrText, (int)currLen);
+                            offsetCurrText += currLen;
+                        }
+
+                        return string.Join("|", titleList);
+                    }
+                }
+
+                return string.Empty;
+            }
+            else
+            {
+                return data.GetUTF8String(OffsetTitle);
             }
         }
 

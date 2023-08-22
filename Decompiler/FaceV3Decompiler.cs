@@ -6,7 +6,7 @@ using System.Linq;
 using UnpackMiColorFace.FaceFileV3;
 using UnpackMiColorFace.Helpers;
 using XiaomiWatch.Common;
-using XiaomiWatch.Common.Decompress;
+using XiaomiWatch.Common.Compress;
 using XiaomiWatch.Common.FaceFile;
 
 namespace UnpackMiColorFace.Decompiler
