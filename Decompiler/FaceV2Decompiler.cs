@@ -41,27 +41,16 @@ namespace UnpackMiColorFace.Decompiler
 
             offset += (uint)(shiftWords * 0x04);
 
-            for (int c = 0; c < count; c++)
+            for (int index = 0; index < count; index++)
             {
-                string imagesFolder = (c == 0
-                    ? filenameHelper.NameNoExt + @"\images"
-                    : ((c == 1)
-                        ? filenameHelper.NameNoExt + @"\AOD\images"
-                        : filenameHelper.NameNoExt + $@"\images_{c}")
-                    );
-
-                if (watchType == WatchType.Gen3)
-                    imagesFolder = filenameHelper.NameNoExt + @"\images";
+                string imagesFolder = filenameHelper.GetFaceSlotImagesFolder(watchType, index, subVersion);
 
                 if (Directory.Exists(imagesFolder))
                     dir = new DirectoryInfo(imagesFolder);
                 else
                     dir = Directory.CreateDirectory(imagesFolder);
 
-                var pathImages = dir.FullName + "\\";
-
-                // app path
-                string pathApp = filenameHelper.NameNoExt + @"\app";
+                var pathImages = dir.FullName + "\\";                
 
                 List<FaceElement> lste = null;
                 List<FaceWidget> lstw = null;
@@ -84,7 +73,7 @@ namespace UnpackMiColorFace.Decompiler
                     if (i == 3)
                         lstil = ProcessImageList(watchType, data, offset, pathImages);
                     if (i == 5) // apps
-                        lstApp = ProcessAppData(watchType, data, offset, pathApp);
+                        lstApp = ProcessAppData(watchType, data, offset);
                     if (i == 7) // widgets
                         lstw = ProcessWidgets(data, offset, path);
                     if (i == 9) // action buttons
@@ -97,13 +86,7 @@ namespace UnpackMiColorFace.Decompiler
                 if (watchType == WatchType.Gen3)
                     lste.Insert(0, new FaceElement(backImageId));
 
-                bool isAOD = c == 1;
-
-                string facefile = c > 1 ? $"{filenameHelper.NameNoExt}_{c}" : filenameHelper.NameNoExt;
-                if (isAOD) facefile = "AOD\\" + filenameHelper.NameNoExt;
-
-                if (watchType == WatchType.Gen3 && isAOD)
-                    facefile = $"{filenameHelper.NameNoExt}_AOD";
+                string facefile = filenameHelper.GetFaceSlotFilename(watchType, index, subVersion);
 
                 string title = GetFaceTitle(data, watchType);
 
@@ -132,7 +115,7 @@ namespace UnpackMiColorFace.Decompiler
                         for (int i = 0; i < count; i++)
                         {
                             uint currLen = data.GetDWord((uint)(offsetTitle + 8 + (i * 4)));
-                            titleList[i] = data.GetUTF8String(offsetCurrText, (int)currLen);
+                            titleList[i] = data.GetUTF8String(offsetCurrText, (int)currLen).Trim();
                             offsetCurrText += currLen;
                         }
 
@@ -248,58 +231,57 @@ namespace UnpackMiColorFace.Decompiler
             File.Copy(pngFile, pngFileCopy);
         }
 
-        private List<FaceAppItem> ProcessAppData(WatchType watchType, byte[] data, uint offset, string path)
+        private List<FaceAppItem> ProcessAppData(WatchType watchType, byte[] data, uint offset)
         {
+            string path = filenameHelper.NameNoExt + @"\app\";
+
             uint blockCount = data.GetDWord(offset);
             uint blockOffset = data.GetDWord(offset + 4);
 
             var lst = new List<FaceAppItem>();
 
-            if (watchType == WatchType.MiBand8)
+            if (blockCount == 0)
+                return lst;
+
+            offset = blockOffset;
+            for (int i = 0; i < blockCount; i++)
             {
-                if (blockCount > 0)
+                uint idx = data.GetWord(offset);
+                uint id = data.GetDWord(offset);
+
+                uint dataOfs = data.GetDWord(offset + 0x08);
+                uint dataLen = data.GetDWord(offset + 0x0C);
+
+                var fileSize = data.GetDWord(dataOfs) & 0xFFFFFF;
+                uint filenameLen = data[dataOfs + 3];
+                dataLen = 0x14 + filenameLen + fileSize;
+
+                byte[] bin = data.GetByteArray(dataOfs, dataLen);
+
+                //string appFile = path + $"app_{idx:D4}.bin";
+                //File.WriteAllBytes(appFile, bin);
+
+                string filename = Encoding.ASCII.GetString(bin.GetByteArray(0x14, filenameLen));
+
+                string appFile = path + filename;
+
+                DirectoryInfo dir;
+
+                string appDir = Path.GetDirectoryName(appFile);
+                if (Directory.Exists(appDir))
+                    dir = new DirectoryInfo(appDir);
+                else
+                    dir = Directory.CreateDirectory(appDir);
+
+                File.WriteAllBytes(appFile, bin.GetByteArray(0x14 + filenameLen, fileSize));
+
+                lst.Add(new FaceAppItem()
                 {
-                    DirectoryInfo dir;
+                    Id = id,
+                    Name = filename
+                });
 
-                    if (Directory.Exists(path))
-                        dir = new DirectoryInfo(path);
-                    else
-                        dir = Directory.CreateDirectory(path);
-
-                    path = dir.FullName + "\\";
-                }
-
-                offset = blockOffset;
-                for (int i = 0; i < blockCount; i++)
-                {
-                    uint idx = data.GetWord(offset);
-                    uint id = data.GetDWord(offset);
-
-                    uint dataOfs = data.GetDWord(offset + 0x08);
-                    uint dataLen = data.GetDWord(offset + 0x0C);
-
-                    var fileSize = data.GetDWord(dataOfs) & 0xFFFFFF;
-                    uint filenameLen = data[dataOfs + 3];
-                    dataLen = 0x14 + filenameLen + fileSize;
-
-                    byte[] bin = data.GetByteArray(dataOfs, dataLen);
-
-                    //string appFile = path + $"app_{idx:D4}.bin";
-                    //File.WriteAllBytes(appFile, bin);
-
-                    string filename = Encoding.ASCII.GetString(bin.GetByteArray(0x14, filenameLen));
-
-                    string appFile = path + filename;
-                    File.WriteAllBytes(appFile, bin.GetByteArray(0x14 + filenameLen, fileSize));
-
-                    lst.Add(new FaceAppItem()
-                    {
-                        Id = id,
-                        Name = filename
-                    });
-
-                    offset += 0x10;
-                }
+                offset += 0x10;
             }
 
             return lst;
@@ -675,24 +657,38 @@ namespace UnpackMiColorFace.Decompiler
                 else if (e.TargetId >> 24 == 09)
                 {
                     var action = lsta.Find(c => c.Id == e.TargetId);
-
-                    string nameAction = "";
-                    if (action.ActionId == 0x23721400)
+                    if (action != null)
                     {
-                        var appItem = lstApp.Find(c => c.Id == action.AppId);
-                        if (appItem != null)
-                            nameAction = $"_[{appItem.Name}]";
+                        string nameAction = "";
+                        if (action.ActionId == 0x23721400)
+                        {
+                            var appItem = lstApp.Find(c => c.Id == action.AppId);
+                            if (appItem != null)
+                                nameAction = $"_[{appItem.Name}]";
+                        }
+
+                        face.Screen.Widgets.Add(new FaceWidgetImage()
+                        {
+                            Name = $"btn_{idx:D2}{nameAction}",
+                            X = e.PosX,
+                            Y = e.PosY,
+                            //Width = img.Width,
+                            //Height = img.Height,
+                            Alpha = 0xFF,
+                            Bitmap = action.ImageName,
+                        });
                     }
-
-                    face.Screen.Widgets.Add(new FaceWidgetImage()
+                }
+                else if (e.TargetId >> 24 == 05)
+                {
+                    var app = lstApp.Find(c => c.Id == e.TargetId);
+                    face.Screen.Widgets.Add(new FaceWidgetContainer()
                     {
-                        Name = $"btn_{idx:D2}{nameAction}",
-                        X = e.PosX,
-                        Y = e.PosY,
-                        //Width = img.Width,
-                        //Height = img.Height,
-                        Alpha = 0xFF,
-                        Bitmap = action.ImageName,
+                        Name = $"app_{Uri.EscapeDataString(app.Name)}",
+                        X = 0,
+                        Y = 0,
+                        Width = WatchScreen.GetScreenWidth(watchType),
+                        Height = WatchScreen.GetScreenHeight(watchType)
                     });
                 }
 
@@ -739,6 +735,8 @@ namespace UnpackMiColorFace.Decompiler
                     //File.WriteAllBytes(path + $"img_{idx:D4}.bin", bin);
 
                     uint imageId = bin.GetDWord(0x20) & 0xFF;
+
+                    if (imageId == 0) continue;
 
                     lst.Add(new FaceAction()
                     {
@@ -943,7 +941,7 @@ namespace UnpackMiColorFace.Decompiler
                         type = bin[0x10] & 0x0F;
                         int decLen = (int)bin.GetDWord(0x10) >> 4;
 
-                        Console.WriteLine($"got compressed image: {dataOfs:X8}, type:{type:X2}, rle:{rle:X2}");
+                        Console.WriteLine($"got compressed image[{path.GetLastDirectory()}:{idx}]: {dataOfs:X8}, type:{type:X2}, rle:{rle:X2}");
 
                         if (rle == 0x10)
                             pxls = BmpHelper.UncompressRLEv20(cpr, decLen);
@@ -1088,7 +1086,8 @@ namespace UnpackMiColorFace.Decompiler
                     uint maxSize = bin.GetDWord(8) + 0x0C;
                     uint magic = bin.GetDWord(0x0C + (4 * arrCount));
 
-                    Console.WriteLine($"got compressed imageList: {dataOfs:X8}, type:{type:X2}, rle:{rle:X2}");
+                    
+                    Console.WriteLine($"got compressed imageList[{path.GetLastDirectory()}:{idx}]: {dataOfs:X8}, type:{type:X2}, rle:{rle:X2}");
 
                     List<string> nameList = new List<string>();
 

@@ -371,6 +371,10 @@ namespace UnpackMiColorFace.Helpers
             uint rowLen = (uint)(width * type);
         
             byte[] dst = new byte[src.Length];
+
+            if (rowLen * height > src.Length)
+                throw new ApplicationException($"image processing err, image len: {src.Length}, but expected: {rowLen * height}");
+
             uint srcOffset = (uint)src.Length - rowLen;
 
             for (int i = 0; i < height; i++)

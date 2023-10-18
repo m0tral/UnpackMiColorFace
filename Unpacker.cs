@@ -1,10 +1,5 @@
-﻿using ImageMagick;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
+﻿using System;
 using System.IO;
-using System.Linq;
-using System.Text;
 using UnpackMiColorFace.Decompiler;
 using XiaomiWatch.Common;
 
@@ -42,6 +37,8 @@ namespace UnpackMiColorFace
                 throw new MissingFieldException();
 
             watchType = WatchDetector.GetWatchType(data, version);
+
+            Console.WriteLine($"Watch detected: {watchType}");
 
             var decompiler = DecompilerFactory.GetDecompiler(version, filename);
             decompiler.Process(watchType, data);
