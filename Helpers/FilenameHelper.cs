@@ -18,6 +18,7 @@ namespace UnpackMiColorFace.Helpers
         public string GetFaceSlotImagesFolder(WatchType watchType, int slotId, int subversion) => watchType switch
         {
             WatchType.Gen3 => NameNoExt + @"\images",
+            WatchType.MiWatchS3 => NameNoExt + @"\images",
             WatchType.MiBand8Pro => NameNoExt + @"\images",
             _ => (slotId == 0 ? NameNoExt + @"\images" : ((slotId == 1) ? NameNoExt + @"\AOD\images" : NameNoExt + $@"\images_{slotId}") )
         };
@@ -26,7 +27,9 @@ namespace UnpackMiColorFace.Helpers
         {
             string facefile = slotId > 0 ? $"{NameNoExt}_{slotId}" : NameNoExt;
 
-            if (watchType == WatchType.Gen3 || watchType == WatchType.MiBand8Pro)
+            if (watchType == WatchType.Gen3
+                || watchType == WatchType.MiWatchS3
+                || watchType == WatchType.MiBand8Pro)
             {
                 if ((subversion & 0x04) > 0 && slotId == 1)
                     facefile = $"{NameNoExt}_AOD";

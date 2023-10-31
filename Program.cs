@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using UnpackMiColorFace.Helpers;
 
 namespace UnpackMiColorFace
 {
@@ -41,6 +42,9 @@ namespace UnpackMiColorFace
             try
             {
                 Unpacker.Exec(filename);
+
+                if (LogHelper.GotError)
+                    Console.ReadKey();
             }
             catch (MissingFieldException)
             {

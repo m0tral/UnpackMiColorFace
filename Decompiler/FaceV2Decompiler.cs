@@ -33,6 +33,7 @@ namespace UnpackMiColorFace.Decompiler
             uint offsetPreview = 0x20;
             uint offset = 0xA8;
 
+            int shiftWordsUnk = data.GetByte(0x18);
             int count = data.GetByte(0x1C);
             int shiftWords = data.GetByte(0x1D);
             int subVersion = data.GetWord(0x1E);    // S1 Pro subversion or at location 0x04 ??
@@ -40,6 +41,7 @@ namespace UnpackMiColorFace.Decompiler
             ProcessPreview(watchType, data, offsetPreview, path);
 
             offset += (uint)(shiftWords * 0x04);
+            offset += (uint)(shiftWordsUnk * 0x04);
 
             for (int index = 0; index < count; index++)
             {
@@ -83,7 +85,20 @@ namespace UnpackMiColorFace.Decompiler
                     offset += 8;
                 }
 
-                if (watchType == WatchType.Gen3)
+                if (watchType == WatchType.MiWatchS3)
+                {
+                    offset += 0x44;
+                    uint themeData = data.GetDWord(offset);
+                    offset += 4;
+
+                    int shiftThemeValue = (int)(themeData & 0xFF) >> 2;
+                    if (shiftThemeValue > 1)
+                    {
+                        offset += (uint)(shiftThemeValue * 4);
+                    }
+                }
+
+                if (watchType == WatchType.Gen3 || watchType == WatchType.MiWatchS3)
                     lste.Insert(0, new FaceElement(backImageId));
 
                 string facefile = filenameHelper.GetFaceSlotFilename(watchType, index, subVersion);
@@ -349,6 +364,7 @@ namespace UnpackMiColorFace.Decompiler
                                 if (widgetNum.Alignment == 0    // center
                                     && (watchType == WatchType.Gen2
                                         || watchType == WatchType.Gen3
+                                        || watchType == WatchType.MiWatchS3
                                         || watchType == WatchType.RedmiWatch2
                                         || watchType == WatchType.RedmiWatch3
                                         || watchType == WatchType.MiBand8Pro
@@ -394,7 +410,8 @@ namespace UnpackMiColorFace.Decompiler
 
                 if (watchType == WatchType.Gen1
                     || watchType == WatchType.Gen2
-                    || watchType == WatchType.Gen3)
+                    || watchType == WatchType.Gen3
+                    || watchType == WatchType.MiWatchS3)
                 {
                     // cut image by circle
                     preview.Alpha(AlphaOption.Set);
@@ -491,205 +508,217 @@ namespace UnpackMiColorFace.Decompiler
             int idx = 0;
             foreach (var e in lste)
             {
-                if (e.TargetId >> 24 == 02)
+                try
                 {
-                    var img = lsti.Find(c => c.Id == e.TargetId);
 
-                    face.Screen.Widgets.Add(new FaceWidgetImage()
+                    if (e.TargetId >> 24 == 02)
                     {
-                        Name = $"image_{idx:D2}",
-                        X = e.PosX,
-                        Y = e.PosY,
-                        Width = img.Width,
-                        Height = img.Height,
-                        Alpha = 0xFF,
-                        Bitmap = img.Name,
-                    });
-                }
-                else if (e.TargetId >> 24 == 07)
-                {
-                    var wdgt = lstw.Find(c => c.Id == e.TargetId);
-                    var imgl = lstil.Find(c => c.Id == wdgt.TargetId);
-                    var imgi = lsti.Find(c => c.Id == wdgt.TargetId);
-                    if (imgl == null && imgi == null) continue;
+                        var img = lsti.Find(c => (c.Id & 0xFF00FFFF) == e.TargetId);
 
-                    if (wdgt.TypeId == 0x01)
-                    {
-                        if (imgl.NameList.Count() == 10)
+                        face.Screen.Widgets.Add(new FaceWidgetImage()
                         {
-                            var _list = imgl.NameList.ToList();
-                            _list.Add(imgl.NameList[0]);
-                            imgl.NameList = _list.ToArray();
-                        }
-
-                        var digits = wdgt.Digits;
-
-                        string digit = GetStringSource($"{wdgt.Shape:X2}{wdgt.DataSrcDisplay:X2}");
-                        int maxLen = digits > digit.Length ? digit.Length : digits;
-
-                        int posX = e.PosX;
-                        int width = imgl.Width;
-                        int spacing = 0;
-                        if (wdgt.Align == 2    // center
-                            && (watchType == WatchType.Gen2
-                                || watchType == WatchType.Gen3
-                                || watchType == WatchType.RedmiBandPro
-                                || watchType == WatchType.RedmiWatch2
-                                || watchType == WatchType.RedmiWatch3
-                                || watchType == WatchType.MiBand8
-                                || watchType == WatchType.MiBand8Pro
-                                || watchType == WatchType.MiBand7Pro))
-                        {
-                            posX -= ((width + spacing) * maxLen) / 2;
-                        }
-                        else if (wdgt.Align == 0 // right
-                            && (watchType == WatchType.Gen2
-                                || watchType == WatchType.Gen3
-                                || watchType == WatchType.RedmiBandPro
-                                || watchType == WatchType.RedmiWatch2
-                                || watchType == WatchType.RedmiWatch3
-                                || watchType == WatchType.MiBand8
-                                || watchType == WatchType.MiBand8Pro
-                                || watchType == WatchType.MiBand7Pro))
-
-                        {
-                            posX -= ((width + spacing) * maxLen);
-                        }
-
-                        face.Screen.Widgets.Add(new FaceWidgetDigitalNum()
-                        {
-                            Name = $"widget_{idx:D2}",
-                            X = posX,
-                            Y = e.PosY,
-                            Width = imgl.Width,
-                            Height = imgl.Height,
-                            Digits = digits,
-                            Alignment = GetTextAlignment(wdgt.Align),
-                            Alpha = 0xFF,
-                            DataSrcValue = $"{wdgt.Shape:X2}{wdgt.DataSrcDisplay:X2}",
-                            BitmapList = string.Join("|", imgl.NameList),
-                        });
-                    }
-                    else if (wdgt.TypeId == 0x02)
-                    {
-
-                        bool hasCustomValues = wdgt.RawData.GetWord(0x0c) == 0x200;
-                        string bmpList = "";
-                        for (int x = 0; x < imgl.NameList.Length; x++)
-                        {
-                            int value = 0;
-                            try
-                            {
-                                if (hasCustomValues)
-                                    value = (int)wdgt.RawData.GetDWord(0x10 + (x * 4));
-                            }
-                            catch { }
-
-                            if (bmpList.Length > 0)
-                                bmpList += "|";
-                            bmpList += $"({(hasCustomValues ? value : x)}):{imgl.NameList[x]}";
-                        }
-                        face.Screen.Widgets.Add(new FaceWidgetImageList()
-                        {
-                            Name = $"widget_{idx:D2}",
+                            Name = $"image_{idx:D2}",
                             X = e.PosX,
                             Y = e.PosY,
-                            Width = imgl.Width,
-                            Height = imgl.Height,
+                            Width = img.Width,
+                            Height = img.Height,
                             Alpha = 0xFF,
-                            DataSrcIndex = $"{wdgt.Shape:X2}{wdgt.DataSrcDisplay:X2}",
-                            BitmapList = bmpList,
+                            Bitmap = img.Name,
                         });
                     }
-                    else if (wdgt.TypeId == 0x03)
+                    else if (e.TargetId >> 24 == 07)
                     {
-                        if (wdgt.DataSrcDisplay == 0x11)
+                        var wdgt = lstw.Find(c => c.Id == e.TargetId);
+                        var imgl = lstil.Find(c => c.Id == wdgt.TargetId);
+                        var imgi = lsti.Find(c => c.Id == wdgt.TargetId);
+                        if (imgl == null && imgi == null) continue;
+
+                        if (wdgt.TypeId == 0x01)
                         {
-                            if (!face.Screen.Widgets.Any(w => w.Shape == 27))
+                            if (imgl.NameList.Count() == 10)
                             {
-                                face.Screen.Widgets.Add(new FaceWidgetAnalogClock()
-                                {
-                                    Name = $"analogClock_{idx:D2}",
-                                    Width = WatchScreen.GetScreenWidth(watchType),
-                                    Height = WatchScreen.GetScreenHeight(watchType),
-                                    Alpha = 0xFF,
-                                });
+                                var _list = imgl.NameList.ToList();
+                                _list.Add(imgl.NameList[0]);
+                                imgl.NameList = _list.ToArray();
                             }
 
-                            FaceWidgetAnalogClock clock = face.Screen.Widgets.First(w => w.Shape == 27) as FaceWidgetAnalogClock;
+                            var digits = wdgt.Digits;
 
-                            if (wdgt.Shape == 0x08)
+                            string digit = GetStringSource($"{wdgt.Shape:X2}{wdgt.DataSrcDisplay:X2}");
+                            int maxLen = digits > digit.Length ? digit.Length : digits;
+
+                            int posX = e.PosX;
+                            int width = imgl.Width;
+                            int spacing = 0;
+                            if (wdgt.Align == 2    // center
+                                && (watchType == WatchType.Gen2
+                                    || watchType == WatchType.Gen3
+                                    || watchType == WatchType.MiWatchS3
+                                    || watchType == WatchType.RedmiBandPro
+                                    || watchType == WatchType.RedmiWatch2
+                                    || watchType == WatchType.RedmiWatch3
+                                    || watchType == WatchType.MiBand8
+                                    || watchType == WatchType.MiBand8Pro
+                                    || watchType == WatchType.MiBand7Pro))
                             {
-                                clock.HourHandImage = imgi.Name;
-                                clock.HourImageRotateX = wdgt.X;
-                                clock.HourImageRotateY = wdgt.Y;
+                                posX -= ((width + spacing) * maxLen) / 2;
                             }
-                            else if (wdgt.Shape == 0x10)
+                            else if (wdgt.Align == 0 // right
+                                && (watchType == WatchType.Gen2
+                                    || watchType == WatchType.Gen3
+                                    || watchType == WatchType.MiWatchS3
+                                    || watchType == WatchType.RedmiBandPro
+                                    || watchType == WatchType.RedmiWatch2
+                                    || watchType == WatchType.RedmiWatch3
+                                    || watchType == WatchType.MiBand8
+                                    || watchType == WatchType.MiBand8Pro
+                                    || watchType == WatchType.MiBand7Pro))
+
                             {
-                                clock.MinuteHandImage = imgi.Name;
-                                clock.MinuteImageRotateX = wdgt.X;
-                                clock.MinuteImageRotateY = wdgt.Y;
-                            }
-                            else if (wdgt.Shape == 0x18)
-                            {
-                                clock.SecondHandImage = imgi.Name;
-                                clock.SecondImageRotateX = wdgt.X;
-                                clock.SecondImageRotateY = wdgt.Y;
+                                posX -= ((width + spacing) * maxLen);
                             }
 
+                            face.Screen.Widgets.Add(new FaceWidgetDigitalNum()
+                            {
+                                Name = $"widget_{idx:D2}",
+                                X = posX,
+                                Y = e.PosY,
+                                Width = imgl.Width,
+                                Height = imgl.Height,
+                                Digits = digits,
+                                Alignment = GetTextAlignment(wdgt.Align),
+                                Alpha = 0xFF,
+                                DataSrcValue = $"{wdgt.Shape:X2}{wdgt.DataSrcDisplay:X2}",
+                                BitmapList = string.Join("|", imgl.NameList),
+                            });
                         }
-                        else
+                        else if (wdgt.TypeId == 0x02)
                         {
-                            face.Screen.Widgets.Add(new FaceWidgetCircularGauge()
+
+                            bool hasCustomValues = wdgt.RawData.GetWord(0x0c) == 0x200;
+                            string bmpList = "";
+                            for (int x = 0; x < imgl.NameList.Length; x++)
+                            {
+                                int value = 0;
+                                try
+                                {
+                                    if (hasCustomValues)
+                                        value = (int)wdgt.RawData.GetDWord(0x10 + (x * 4));
+                                }
+                                catch { }
+
+                                if (bmpList.Length > 0)
+                                    bmpList += "|";
+                                bmpList += $"({(hasCustomValues ? value : x)}):{imgl.NameList[x]}";
+                            }
+                            face.Screen.Widgets.Add(new FaceWidgetImageList()
                             {
                                 Name = $"widget_{idx:D2}",
                                 X = e.PosX,
                                 Y = e.PosY,
-                                Width = imgi.Width,
-                                Height = imgi.Height,
+                                Width = imgl.Width,
+                                Height = imgl.Height,
                                 Alpha = 0xFF,
-                                DataSrcVal = $"{wdgt.Shape:X2}{wdgt.DataSrcDisplay:X2}",
-                                PointerImage = imgi.Name,
+                                DataSrcIndex = $"{wdgt.Shape:X2}{wdgt.DataSrcDisplay:X2}",
+                                BitmapList = bmpList,
+                            });
+                        }
+                        else if (wdgt.TypeId == 0x03)
+                        {
+                            if (wdgt.DataSrcDisplay == 0x11)
+                            {
+                                if (!face.Screen.Widgets.Any(w => w.Shape == 27))
+                                {
+                                    face.Screen.Widgets.Add(new FaceWidgetAnalogClock()
+                                    {
+                                        Name = $"analogClock_{idx:D2}",
+                                        Width = WatchScreen.GetScreenWidth(watchType),
+                                        Height = WatchScreen.GetScreenHeight(watchType),
+                                        Alpha = 0xFF,
+                                    });
+                                }
+
+                                FaceWidgetAnalogClock clock = face.Screen.Widgets.First(w => w.Shape == 27) as FaceWidgetAnalogClock;
+
+                                if (wdgt.Shape == 0x08)
+                                {
+                                    clock.HourHandImage = imgi.Name;
+                                    clock.HourImageRotateX = wdgt.X;
+                                    clock.HourImageRotateY = wdgt.Y;
+                                }
+                                else if (wdgt.Shape == 0x10)
+                                {
+                                    clock.MinuteHandImage = imgi.Name;
+                                    clock.MinuteImageRotateX = wdgt.X;
+                                    clock.MinuteImageRotateY = wdgt.Y;
+                                }
+                                else if (wdgt.Shape == 0x18)
+                                {
+                                    clock.SecondHandImage = imgi.Name;
+                                    clock.SecondImageRotateX = wdgt.X;
+                                    clock.SecondImageRotateY = wdgt.Y;
+                                }
+
+                            }
+                            else
+                            {
+                                face.Screen.Widgets.Add(new FaceWidgetCircularGauge()
+                                {
+                                    Name = $"widget_{idx:D2}",
+                                    X = e.PosX,
+                                    Y = e.PosY,
+                                    Width = imgi.Width,
+                                    Height = imgi.Height,
+                                    Alpha = 0xFF,
+                                    DataSrcVal = $"{wdgt.Shape:X2}{wdgt.DataSrcDisplay:X2}",
+                                    PointerImage = imgi.Name,
+                                });
+                            }
+                        }
+                    }
+                    else if (e.TargetId >> 24 == 09)
+                    {
+                        var action = lsta.Find(c => c.Id == e.TargetId);
+                        if (action != null)
+                        {
+                            string nameAction = "";
+                            if (action.ActionId == 0x23721400)
+                            {
+                                var appItem = lstApp.Find(c => c.Id == action.AppId);
+                                if (appItem != null)
+                                    nameAction = $"_[{appItem.Name}]";
+                            }
+
+                            face.Screen.Widgets.Add(new FaceWidgetImage()
+                            {
+                                Name = $"btn_{idx:D2}{nameAction}",
+                                X = e.PosX,
+                                Y = e.PosY,
+                                //Width = img.Width,
+                                //Height = img.Height,
+                                Alpha = 0xFF,
+                                Bitmap = action.ImageName,
                             });
                         }
                     }
-                }
-                else if (e.TargetId >> 24 == 09)
-                {
-                    var action = lsta.Find(c => c.Id == e.TargetId);
-                    if (action != null)
+                    else if (e.TargetId >> 24 == 05)
                     {
-                        string nameAction = "";
-                        if (action.ActionId == 0x23721400)
+                        var app = lstApp.Find(c => c.Id == e.TargetId);
+                        face.Screen.Widgets.Add(new FaceWidgetContainer()
                         {
-                            var appItem = lstApp.Find(c => c.Id == action.AppId);
-                            if (appItem != null)
-                                nameAction = $"_[{appItem.Name}]";
-                        }
-
-                        face.Screen.Widgets.Add(new FaceWidgetImage()
-                        {
-                            Name = $"btn_{idx:D2}{nameAction}",
-                            X = e.PosX,
-                            Y = e.PosY,
-                            //Width = img.Width,
-                            //Height = img.Height,
-                            Alpha = 0xFF,
-                            Bitmap = action.ImageName,
+                            Name = $"app_{Uri.EscapeDataString(app.Name)}",
+                            X = 0,
+                            Y = 0,
+                            Width = WatchScreen.GetScreenWidth(watchType),
+                            Height = WatchScreen.GetScreenHeight(watchType)
                         });
                     }
+
                 }
-                else if (e.TargetId >> 24 == 05)
+                catch (Exception ex)
                 {
-                    var app = lstApp.Find(c => c.Id == e.TargetId);
-                    face.Screen.Widgets.Add(new FaceWidgetContainer()
-                    {
-                        Name = $"app_{Uri.EscapeDataString(app.Name)}",
-                        X = 0,
-                        Y = 0,
-                        Width = WatchScreen.GetScreenWidth(watchType),
-                        Height = WatchScreen.GetScreenHeight(watchType)
-                    });
+                    LogHelper.GotError = true;
+                    Console.WriteLine($"Failed to build watchface item: {ex}");
                 }
 
                 idx++;
@@ -708,9 +737,12 @@ namespace UnpackMiColorFace.Decompiler
 
         private static int GetTextAlignment(byte align)
         {
-            if (align == 2) return 1;
-            if (align == 1) return 2;
-            return 0;
+            return align switch
+            {
+                2 => 1,
+                1 => 2,
+                _ => 0
+            };
         }
 
         private List<FaceAction> ProcessAction(byte[] data, uint offset, string path)
@@ -910,6 +942,13 @@ namespace UnpackMiColorFace.Decompiler
                         }
                     }
 
+                    if (watchType == WatchType.MiWatchS3 && rle == 0x10)
+                    {
+                        type = 1;
+                        clut = pxls.Take(0x400).ToArray();
+                        pxls = pxls.Skip(0x400).ToArray();
+                    }
+
                     //if (watchType == WatchType.Gen2 && version == 0x800)
                     //{
                     //    if ((rle & 0x0F) == 0x03)
@@ -923,7 +962,7 @@ namespace UnpackMiColorFace.Decompiler
 
                     if (magic != 0x5AA521E0)
                     {
-                        if (type == 1)
+                        if (type == 1 && watchType != WatchType.MiWatchS3)
                         {
                             uint pxlsLen = 0x15 + ((uint)width * (uint)height);
                             clut = bin.GetByteArray(pxlsLen + 4, (uint)bin.Length - pxlsLen - 4);
@@ -1021,6 +1060,7 @@ namespace UnpackMiColorFace.Decompiler
                 }
                 catch (Exception ex)
                 {
+                    LogHelper.GotError = true;
                     Console.WriteLine("image processing err: " + ex);
                 }
 
@@ -1055,7 +1095,9 @@ namespace UnpackMiColorFace.Decompiler
                     int height = bin.GetWord(0x06);
 
                     int rle = bin[0];
-                    int type = bin[2];
+                    int cprType = bin[2];
+                    
+                    int type = cprType;
 
                     if (rle == 0 && type == 0) type = 4;
 
@@ -1066,6 +1108,7 @@ namespace UnpackMiColorFace.Decompiler
                         || watchType == WatchType.RedmiBandPro
                         || watchType == WatchType.RedmiWatch3
                         || watchType == WatchType.MiBand8Pro
+                        || watchType == WatchType.MiWatchS3
                         || watchType == WatchType.MiBand7Pro)
                     {
                         if ((rle & 0x0F) == 0x04)
@@ -1078,6 +1121,13 @@ namespace UnpackMiColorFace.Decompiler
                         {
                             type = 2;
                             imgSize = (uint)width * 2 * (uint)height;
+                            alfSize = 0;
+                        }
+                        if (cprType == 0 && (watchType == WatchType.MiWatchS3) && (rle & 0xFF) == 0x10)
+                        {
+                            // indexed image with color table
+                            type = 1;
+                            imgSize = ((uint)width * (uint)height) + 0x400;
                             alfSize = 0;
                         }
                     }
@@ -1107,6 +1157,7 @@ namespace UnpackMiColorFace.Decompiler
                         byte[] pxls = null;
                         byte[] pxlsFull = null;
                         byte[] alfa = null;
+                        byte[] clut = null;
 
                         if (magic == 0x5AA521E0)
                         {
@@ -1151,13 +1202,21 @@ namespace UnpackMiColorFace.Decompiler
                                 alfa = new byte[alfSize];
                                 Array.Copy(bin.GetByteArray(startOffset + imgSize, alfSize), alfa, alfSize);
                             }
+
+                            if (type == 1 && watchType == WatchType.MiWatchS3)
+                            {
+                                int clutLen = 0x400;
+                                clut = new byte[clutLen];
+                                Array.Copy(pxls.GetByteArray(0, clutLen), clut, clut.Length);
+                                pxls = pxls.Skip(clutLen).ToArray();
+                            }
                         }
 
                         byte[] bmp = null;
                         if (magic == 0x5AA521E0)
                             bmp = BmpHelper.ConvertToBmpGTRv2(pxls, width, height, type);
                         else
-                            bmp = BmpHelper.ConvertToBmpGTR(pxlsFull, width, height, type, null);
+                            bmp = BmpHelper.ConvertToBmpGTR(pxlsFull, width, height, type, clut);
 
                         string bmpFile = path + $"img_arr_{idx:D4}_{j:D2}.bmp";
                         string pngFile = path + $"img_arr_{idx:D4}_{j:D2}.png";
@@ -1217,6 +1276,7 @@ namespace UnpackMiColorFace.Decompiler
                 }
                 catch (Exception ex)
                 {
+                    LogHelper.GotError = true;
                     Console.WriteLine("image processing err: " + ex);
                 }
 
