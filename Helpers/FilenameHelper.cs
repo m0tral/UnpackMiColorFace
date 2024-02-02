@@ -19,6 +19,7 @@ namespace UnpackMiColorFace.Helpers
         {
             WatchType.Gen3 => NameNoExt + @"\images",
             WatchType.MiWatchS3 => NameNoExt + @"\images",
+            WatchType.MiBand9 => NameNoExt + @"\images",
             WatchType.MiBand8Pro => NameNoExt + @"\images",
             _ => (slotId == 0 ? NameNoExt + @"\images" : ((slotId == 1) ? NameNoExt + @"\AOD\images" : NameNoExt + $@"\images_{slotId}") )
         };
@@ -29,6 +30,7 @@ namespace UnpackMiColorFace.Helpers
 
             if (watchType == WatchType.Gen3
                 || watchType == WatchType.MiWatchS3
+                || watchType == WatchType.MiBand9
                 || watchType == WatchType.MiBand8Pro)
             {
                 if ((subversion & 0x04) > 0 && slotId == 1)
