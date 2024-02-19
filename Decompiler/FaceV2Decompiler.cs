@@ -98,7 +98,7 @@ namespace UnpackMiColorFace.Decompiler
                     }
                 }
 
-                if (watchType == WatchType.Gen3 || watchType == WatchType.MiWatchS3)
+                if (watchType == WatchType.Gen3 || watchType == WatchType.MiWatchS3 || watchType == WatchType.RedmiWatch4)
                     lste.Insert(0, new FaceElement(backImageId));
 
                 string facefile = filenameHelper.GetFaceSlotFilename(watchType, index, subVersion);
