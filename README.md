@@ -1,6 +1,7 @@
 # UnpackMiColorFace
 
-Watchfaces unpacker utility for 70mai watches:
+Watchfaces unpacker utility for Xiaomi watches:
+(70 mai, Longcheer & others)
 
 - Xiaomi Watch Color,
 - Xiaomi Watch Color Sport,
@@ -13,4 +14,10 @@ Watchfaces unpacker utility for 70mai watches:
 - Xiaomi Watch S1 Pro,
 - Xiaomi Redmi Watch 2
 - Xiaomi Redmi Watch 2 Lite,
+- Xiaomi Redmi Watch 3,
+- Xiaomi Redmi Watch 3 Active,
 - Xiaomi Mi Band 7 Pro
+- Xiaomi Watch S2 (Chinese)
+- Xiaomi Watch S3 (Chinese for now)
+- Xioami Mi Band 8
+- Xiaomi Mi Band 8 Pro
