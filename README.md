@@ -21,5 +21,5 @@ Watchfaces unpacker utility for Xiaomi watches:
 - Xiaomi Watch S3 (Chinese and Global)
 - Xioami Mi Band 8
 - Xiaomi Mi Band 8 Pro
-  Xiaomi Readmi Watch 4
+- Xiaomi Readmi Watch 4
 - Xioami Mi Band 9
