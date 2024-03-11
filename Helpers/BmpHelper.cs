@@ -299,6 +299,18 @@ namespace UnpackMiColorFace.Helpers
             }
             else
             {
+                #region align low width images
+                int newWidth = 0;
+
+                if (type != 4)
+                    data = AlignRowData(data, width, height, type, out newWidth);
+                else
+                    newWidth = width;
+
+                lenRaw = data.Length;
+                width = newWidth;
+                #endregion
+
                 data = FlipImageData(data, width, height, type);
                 data = header.Concat(data).ToArray();
             }
