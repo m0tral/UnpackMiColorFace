@@ -68,6 +68,11 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
+    <Reference Include="XiaomiWatch.Common, Version=4.0.0.0, Culture=neutral, PublicKeyToken=51448abaf6d08ec6, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>lib\XiaomiWatch.Common.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Decompiler\DecompilerFactory.cs" />
@@ -96,13 +101,6 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Lib\XiaomiWatch.Common.dll" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\XiaomiWatch.Common\XiaomiWatch.Common.csproj">
-      <Project>{8715a0b0-e2c0-4a22-bf44-2992efb274af}</Project>
-      <Name>XiaomiWatch.Common</Name>
-      <Private>False</Private>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.7.2">
