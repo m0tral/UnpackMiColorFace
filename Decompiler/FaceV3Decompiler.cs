@@ -93,8 +93,12 @@ namespace UnpackMiColorFace.Decompiler
                 int width = data.GetWord(offset + 0x04);
                 int height = data.GetWord(offset + 0x06);
 
+                int type = data.GetByte(offset + 9);
+
                 uint dataOfs = data.GetDWord(offset + 0x0A);
                 uint dataLen = data.GetDWord(offset + 0x0E);
+
+                Console.WriteLine($"image: {offset:X8}, 0x{sectionId:X2}, compress: {type}");
 
                 if (i > 0)  // do not add preview
                 {
@@ -174,7 +178,11 @@ namespace UnpackMiColorFace.Decompiler
                 int height = data.GetWord(offset + 6);
                 int count  = data.GetByte(offset + 8);
                 int type   = data.GetByte(offset + 9);
-                int complex = data.GetWord(offset + 8);
+
+                if (count > 0)
+                {
+                    Console.WriteLine($"imageList: {offset:X8}/{count:X2}, 0x{sectionId:X2}, compress: {type}");
+                }
 
                 if (type == 0)
                 {

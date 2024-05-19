@@ -19,7 +19,7 @@ namespace UnpackMiColorFace.FaceFileV3
             {
                 0x04 => new FaceWidgetImageList()
                 {
-                    Name = $"imgList_{sectionId:X2}_batt",
+                    Name = $"{sectionId:X2}_imgList_batt",
                     BitmapList = imageNameList.Aggregate("", (final, next) => final + (final.Length > 0 ? "|":"") + $"({percentLevel += 10}):{next}"),
                     X = posX,
                     Y = posY,
@@ -29,9 +29,39 @@ namespace UnpackMiColorFace.FaceFileV3
                     DefaultIndex = 50,
                     DataSrcIndex = FaceItemDataSrc.Battery,
                 },
+                0x05 => new FaceWidgetImage()
+                {
+                    Name = $"{sectionId:X2}_img_battCN1",
+                    Bitmap = imageNameList[0],
+                    X = posX,
+                    Y = posY,
+                    Width = width,
+                    Height = height,
+                    Alpha = 0,
+                },
+                0x06 => new FaceWidgetImage()
+                {
+                    Name = $"{sectionId:X2}_img_battEN",
+                    Bitmap = imageNameList[0],
+                    X = posX,
+                    Y = posY,
+                    Width = width,
+                    Height = height,
+                    Alpha = 0xFF,
+                },
+                0x07 => new FaceWidgetImage()
+                {
+                    Name = $"{sectionId:X2}_img_battCN2",
+                    Bitmap = imageNameList[0],
+                    X = posX,
+                    Y = posY,
+                    Width = width,
+                    Height = height,
+                    Alpha = 0,
+                },
                 0x09 => new FaceWidgetDigitalNum()
                 {
-                    Name = $"num_{sectionId:X2}_batt",
+                    Name = $"{sectionId:X2}_num_batt",
                     BitmapList = string.Join("|", imageNameList.Append(imageNameList[0])),
                     X = posX,
                     Y = posY,
@@ -44,7 +74,7 @@ namespace UnpackMiColorFace.FaceFileV3
                 },
                 0x0A => new FaceWidgetImage()
                 {
-                    Name = $"delim_{sectionId:X2}",
+                    Name = $"{sectionId:X2}_delim",
                     Bitmap = imageNameList[0],
                     X = posX,
                     Y = posY,
@@ -54,7 +84,7 @@ namespace UnpackMiColorFace.FaceFileV3
                 },
                 0x0D => new FaceWidgetDigitalNum()
                 {
-                    Name = $"num_{sectionId:X2}_month",
+                    Name = $"{sectionId:X2}_num_month",
                     BitmapList = string.Join("|", imageNameList.Append(imageNameList[0])),
                     X = posX,
                     Y = posY,
@@ -66,7 +96,7 @@ namespace UnpackMiColorFace.FaceFileV3
                 },
                 0x0E => new FaceWidgetImage()
                 {
-                    Name = $"delim_{sectionId:X2}",
+                    Name = $"{sectionId:X2}_delim",
                     Bitmap = imageNameList[0],
                     X = posX,
                     Y = posY,
@@ -76,7 +106,7 @@ namespace UnpackMiColorFace.FaceFileV3
                 },
                 0x0F => new FaceWidgetDigitalNum()
                 {
-                    Name = $"num_{sectionId:X2}_day",
+                    Name = $"{sectionId:X2}_num_day",
                     BitmapList = string.Join("|", imageNameList.Append(imageNameList[0])),
                     X = posX,
                     Y = posY,
@@ -88,7 +118,7 @@ namespace UnpackMiColorFace.FaceFileV3
                 },
                 0x10 => new FaceWidgetImageList()
                 {
-                    Name = $"imgList_{sectionId:X2}_weekCN1",
+                    Name = $"{sectionId:X2}_imgList_weekCN1",
                     BitmapList = imageNameList.Aggregate("", (final, next) => final + (final.Length > 0 ? "|" : "") + $"({numIndex+=1}):{next}"),
                     X = posX,
                     Y = posY,
@@ -100,7 +130,7 @@ namespace UnpackMiColorFace.FaceFileV3
                 },
                 0x11 => new FaceWidgetImageList()
                 {
-                    Name = $"imgList_{sectionId:X2}_weekEN",
+                    Name = $"{sectionId:X2}_imgList_weekEN",
                     BitmapList = imageNameList.Aggregate("", (final, next) => final + (final.Length > 0 ? "|" : "") + $"({numIndex+=1}):{next}"),
                     X = posX,
                     Y = posY,
@@ -112,7 +142,7 @@ namespace UnpackMiColorFace.FaceFileV3
                 },
                 0x12 => new FaceWidgetImageList()
                 {
-                    Name = $"imgList_{sectionId:X2}_weekCN2",
+                    Name = $"{sectionId:X2}_imgList_weekCN2",
                     BitmapList = imageNameList.Aggregate("", (final, next) => final + (final.Length > 0 ? "|" : "") + $"({numIndex+=1}):{next}"),
                     X = posX,
                     Y = posY,
@@ -122,9 +152,45 @@ namespace UnpackMiColorFace.FaceFileV3
                     DefaultIndex = 1,
                     DataSrcIndex = FaceItemDataSrc.Weekday,
                 },
+                0x13 => new FaceWidgetImageList()
+                {
+                    Name = $"{sectionId:X2}_imgList_AMPM-CN1",
+                    BitmapList = imageNameList.Aggregate("", (final, next) => final + (final.Length > 0 ? "|" : "") + $"({numIndex += 1}):{next}"),
+                    X = posX,
+                    Y = posY,
+                    Width = width,
+                    Height = height,
+                    Alpha = 0,
+                    DefaultIndex = 1,
+                    DataSrcIndex = FaceItemDataSrc.AMPM,
+                },
+                0x14 => new FaceWidgetImageList()
+                {
+                    Name = $"{sectionId:X2}_imgList_AMPM-EN",
+                    BitmapList = imageNameList.Aggregate("", (final, next) => final + (final.Length > 0 ? "|" : "") + $"({numIndex += 1}):{next}"),
+                    X = posX,
+                    Y = posY,
+                    Width = width,
+                    Height = height,
+                    Alpha = 0xFF,
+                    DefaultIndex = 1,
+                    DataSrcIndex = FaceItemDataSrc.AMPM,
+                },
+                0x15 => new FaceWidgetImageList()
+                {
+                    Name = $"{sectionId:X2}_imgList_AMPM-CN2",
+                    BitmapList = imageNameList.Aggregate("", (final, next) => final + (final.Length > 0 ? "|" : "") + $"({numIndex += 1}):{next}"),
+                    X = posX,
+                    Y = posY,
+                    Width = width,
+                    Height = height,
+                    Alpha = 0,
+                    DefaultIndex = 1,
+                    DataSrcIndex = FaceItemDataSrc.AMPM,
+                },
                 0x18 => new FaceWidgetImageList()
                 {
-                    Name = $"imgList_{sectionId:X2}_stepsPercent",
+                    Name = $"{sectionId:X2}_imgList_stepsPercent",
                     BitmapList = imageNameList.Aggregate("", (final, next) => final + (final.Length > 0 ? "|" : "") + $"({percentLevel += 10}):{next}"),
                     X = posX,
                     Y = posY,
@@ -134,9 +200,39 @@ namespace UnpackMiColorFace.FaceFileV3
                     DefaultIndex = 50,
                     DataSrcIndex = FaceItemDataSrc.StepsPercent,
                 },
+                0x19 => new FaceWidgetImage()
+                {
+                    Name = $"{sectionId:X2}_img_stepsCN1",
+                    Bitmap = imageNameList[0],
+                    X = posX,
+                    Y = posY,
+                    Width = width,
+                    Height = height,
+                    Alpha = 0,
+                },
+                0x1A => new FaceWidgetImage()
+                {
+                    Name = $"{sectionId:X2}_img_stepsEN",
+                    Bitmap = imageNameList[0],
+                    X = posX,
+                    Y = posY,
+                    Width = width,
+                    Height = height,
+                    Alpha = 0xFF,
+                },
+                0x1B => new FaceWidgetImage()
+                {
+                    Name = $"{sectionId:X2}_img_stepsCN2",
+                    Bitmap = imageNameList[0],
+                    X = posX,
+                    Y = posY,
+                    Width = width,
+                    Height = height,
+                    Alpha = 0,
+                },
                 0x1C => new FaceWidgetDigitalNum()
                 {
-                    Name = $"num_{sectionId:X2}_steps",
+                    Name = $"{sectionId:X2}_num_steps",
                     BitmapList = string.Join("|", imageNameList.Append(imageNameList[0])),
                     X = posX,
                     Y = posY,
@@ -149,7 +245,7 @@ namespace UnpackMiColorFace.FaceFileV3
                 },
                 0x23 => new FaceWidgetImageList()
                 {
-                    Name = $"imgList_{sectionId:X2}_calPercent",
+                    Name = $"{sectionId:X2}_imgList_calPercent",
                     BitmapList = imageNameList.Aggregate("", (final, next) => final + (final.Length > 0 ? "|" : "") + $"({percentLevel += 10}):{next}"),
                     X = posX,
                     Y = posY,
@@ -159,9 +255,39 @@ namespace UnpackMiColorFace.FaceFileV3
                     DefaultIndex = 50,
                     DataSrcIndex = FaceItemDataSrc.CaloriesPercent,
                 },
+                0x24 => new FaceWidgetImage()
+                {
+                    Name = $"{sectionId:X2}_img_calCN1",
+                    Bitmap = imageNameList[0],
+                    X = posX,
+                    Y = posY,
+                    Width = width,
+                    Height = height,
+                    Alpha = 0,
+                },
+                0x25 => new FaceWidgetImage()
+                {
+                    Name = $"{sectionId:X2}_img_calEN",
+                    Bitmap = imageNameList[0],
+                    X = posX,
+                    Y = posY,
+                    Width = width,
+                    Height = height,
+                    Alpha = 0xFF,
+                },
+                0x26 => new FaceWidgetImage()
+                {
+                    Name = $"{sectionId:X2}_img_calCN2",
+                    Bitmap = imageNameList[0],
+                    X = posX,
+                    Y = posY,
+                    Width = width,
+                    Height = height,
+                    Alpha = 0,
+                },
                 0x27 => new FaceWidgetDigitalNum()
                 {
-                    Name = $"num_{sectionId:X2}_calories",
+                    Name = $"{sectionId:X2}_num_calories",
                     BitmapList = string.Join("|", imageNameList.Append(imageNameList[0])),
                     X = posX,
                     Y = posY,
@@ -174,7 +300,7 @@ namespace UnpackMiColorFace.FaceFileV3
                 },
                 0x31 => new FaceWidgetDigitalNum()
                 {
-                    Name = $"num_{sectionId:X2}_hrm",
+                    Name = $"{sectionId:X2}_num_hrm",
                     BitmapList = string.Join("|", imageNameList.Append(imageNameList[0])),
                     X = posX,
                     Y = posY,
@@ -187,7 +313,7 @@ namespace UnpackMiColorFace.FaceFileV3
                 },
                 0x32 => new FaceWidgetImage()
                 {
-                    Name = $"img_{sectionId:X2}_noHrm",
+                    Name = $"{sectionId:X2}_img_noHrm",
                     Bitmap = imageNameList[0],
                     X = posX,
                     Y = posY,
@@ -195,9 +321,39 @@ namespace UnpackMiColorFace.FaceFileV3
                     Height = height,
                     Alpha = 0xFF,
                 },
+                0x33 => new FaceWidgetImage()
+                {
+                    Name = $"{sectionId:X2}_img_hrmCN1",
+                    Bitmap = imageNameList[0],
+                    X = posX,
+                    Y = posY,
+                    Width = width,
+                    Height = height,
+                    Alpha = 0,
+                },
+                0x34 => new FaceWidgetImage()
+                {
+                    Name = $"{sectionId:X2}_img_hrmEN",
+                    Bitmap = imageNameList[0],
+                    X = posX,
+                    Y = posY,
+                    Width = width,
+                    Height = height,
+                    Alpha = 0xFF,
+                },
+                0x35 => new FaceWidgetImage()
+                {
+                    Name = $"{sectionId:X2}_img_hrmCN2",
+                    Bitmap = imageNameList[0],
+                    X = posX,
+                    Y = posY,
+                    Width = width,
+                    Height = height,
+                    Alpha = 0,
+                },
                 0x38 => new FaceWidgetDigitalNum()
                 {
-                    Name = $"num_{sectionId:X2}_hourHigh",
+                    Name = $"{sectionId:X2}_num_hourHigh",
                     BitmapList = string.Join("|", imageNameList.Append(imageNameList[0])),
                     X = posX,
                     Y = posY,
@@ -209,7 +365,7 @@ namespace UnpackMiColorFace.FaceFileV3
                 },
                 0x39 => new FaceWidgetDigitalNum()
                 {
-                    Name = $"num_{sectionId:X2}_hourLow",
+                    Name = $"{sectionId:X2}_num_hourLow",
                     BitmapList = string.Join("|", imageNameList.Append(imageNameList[0])),
                     X = posX,
                     Y = posY,
@@ -221,7 +377,7 @@ namespace UnpackMiColorFace.FaceFileV3
                 },
                 0x3A => new FaceWidgetImage()
                 {
-                    Name = $"delim_{sectionId:X2}",
+                    Name = $"{sectionId:X2}_delim",
                     Bitmap = imageNameList[0],
                     X = posX,
                     Y = posY,
@@ -231,7 +387,7 @@ namespace UnpackMiColorFace.FaceFileV3
                 },
                 0x3B => new FaceWidgetDigitalNum()
                 {
-                    Name = $"num_{sectionId:X2}_minHigh",
+                    Name = $"{sectionId:X2}_num_minHigh",
                     BitmapList = string.Join("|", imageNameList.Append(imageNameList[0])),
                     X = posX,
                     Y = posY,
@@ -243,7 +399,41 @@ namespace UnpackMiColorFace.FaceFileV3
                 },
                 0x3C => new FaceWidgetDigitalNum()
                 {
-                    Name = $"num_{sectionId:X2}_minLow",
+                    Name = $"{sectionId:X2}_num_minLow",
+                    BitmapList = string.Join("|", imageNameList.Append(imageNameList[0])),
+                    X = posX,
+                    Y = posY,
+                    Width = width,
+                    Height = height,
+                    Alpha = 0xFF,
+                    Digits = 1,
+                    DataSrcValue = FaceItemDataSrc.MinuteLow,
+                },
+                0x3D => new FaceWidgetImage()
+                {
+                    Name = $"{sectionId:X2}_delim",
+                    Bitmap = imageNameList[0],
+                    X = posX,
+                    Y = posY,
+                    Width = width,
+                    Height = height,
+                    Alpha = 0xFF,
+                },
+                0x3E => new FaceWidgetDigitalNum()
+                {
+                    Name = $"{sectionId:X2}_num_secHigh",
+                    BitmapList = string.Join("|", imageNameList.Append(imageNameList[0])),
+                    X = posX,
+                    Y = posY,
+                    Width = width,
+                    Height = height,
+                    Alpha = 0xFF,
+                    Digits = 1,
+                    DataSrcValue = FaceItemDataSrc.MinuteLow,
+                },
+                0x3F => new FaceWidgetDigitalNum()
+                {
+                    Name = $"{sectionId:X2}_num_secLow",
                     BitmapList = string.Join("|", imageNameList.Append(imageNameList[0])),
                     X = posX,
                     Y = posY,
@@ -255,7 +445,7 @@ namespace UnpackMiColorFace.FaceFileV3
                 },
                 0x42 => new FaceWidgetImageList()
                 {
-                    Name = $"imgList_{sectionId:X2}_hour",
+                    Name = $"{sectionId:X2}_imgList_hour",
                     BitmapList = imageNameList.Aggregate("", (final, next) => final + (final.Length > 0 ? "|" : "") + $"({numIndex++}):{next}"),
                     X = posX,
                     Y = posY,
@@ -267,7 +457,7 @@ namespace UnpackMiColorFace.FaceFileV3
                 },
                 0x43 => new FaceWidgetImageList()
                 {
-                    Name = $"imgList_{sectionId:X2}_min",
+                    Name = $"{sectionId:X2}_imgList_min",
                     BitmapList = imageNameList.Aggregate("", (final, next) => final + (final.Length > 0 ? "|" : "") + $"({numIndex++}):{next}"),
                     X = posX,
                     Y = posY,
@@ -278,7 +468,7 @@ namespace UnpackMiColorFace.FaceFileV3
                 },
                 0x44 => new FaceWidgetImageList()
                 {
-                    Name = $"imgList_{sectionId:X2}_second",
+                    Name = $"{sectionId:X2}_imgList_second",
                     BitmapList = imageNameList.Aggregate("", (final, next) => final + (final.Length > 0 ? "|" : "") + $"({numIndex++}):{next}"),
                     X = posX,
                     Y = posY,
