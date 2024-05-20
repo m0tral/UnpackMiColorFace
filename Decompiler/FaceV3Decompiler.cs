@@ -229,6 +229,9 @@ namespace UnpackMiColorFace.Decompiler
                 }
                 else if (type == 2)
                 {
+                    // image
+                    // 3 bytes per pixel, 2 bytes are - RGB 565, 3rd byte is alpha channel
+
                     var imageNameList = new List<string>();
 
                     uint dataOfs = data.GetDWord(offset + 0x0A);
@@ -284,6 +287,10 @@ namespace UnpackMiColorFace.Decompiler
                 }
                 else if (type == 3)
                 {
+                    // monocolor image
+                    // image has 1 color only,
+                    // with alpha map channel as image control over a color (1 byte map)
+
                     var imageNameList = new List<string>();
 
                     uint dataOfs = data.GetDWord(offset + 0x0A);
@@ -304,6 +311,7 @@ namespace UnpackMiColorFace.Decompiler
                         bin.SetByteArray(pos, pixelData);
                         byte[] dec = decompressor.Decompress(bin, width, height, (uint)(dataLen << 8 | (byte)type));
 
+                        // concat color and alpha channel from decompressed data
                         dec = dec.Select(i => (uint)(color >> 8 | i << 24)).SelectMany(BitConverter.GetBytes).ToArray();
 
                         //string binFile = $"{path}\\image_{sectionId:D2}_{i:D4}.bin";
