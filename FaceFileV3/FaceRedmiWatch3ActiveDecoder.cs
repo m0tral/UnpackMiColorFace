@@ -11,15 +11,21 @@ namespace UnpackMiColorFace.FaceFileV3
         {
         }
 
-        public FaceWidget GetWidget(int sectionId, List<string> imageNameList, int posX, int posY, int width, int height)
+        public FaceWidget GetWidget(int sectionId, List<string> imageNameList, int posX, int posY, int width, int height, uint color = 0)
         {
             int percentLevel = -10;
             int numIndex = 0;
+            string colorPostFix = "";
+            if (color != 0)
+            {
+                colorPostFix = $"_color[{color:X6}]";
+            }
+
             return sectionId switch
             {
                 0x04 => new FaceWidgetImageList()
                 {
-                    Name = $"{sectionId:X2}_imgList_batt",
+                    Name = $"{sectionId:X2}_imgList_batt{colorPostFix}",
                     BitmapList = imageNameList.Aggregate("", (final, next) => final + (final.Length > 0 ? "|":"") + $"({percentLevel += 10}):{next}"),
                     X = posX,
                     Y = posY,
@@ -31,7 +37,7 @@ namespace UnpackMiColorFace.FaceFileV3
                 },
                 0x05 => new FaceWidgetImage()
                 {
-                    Name = $"{sectionId:X2}_img_battCN1",
+                    Name = $"{sectionId:X2}_img_battCN1{colorPostFix}",
                     Bitmap = imageNameList[0],
                     X = posX,
                     Y = posY,
@@ -41,7 +47,7 @@ namespace UnpackMiColorFace.FaceFileV3
                 },
                 0x06 => new FaceWidgetImage()
                 {
-                    Name = $"{sectionId:X2}_img_battEN",
+                    Name = $"{sectionId:X2}_img_battEN{colorPostFix}",
                     Bitmap = imageNameList[0],
                     X = posX,
                     Y = posY,
@@ -51,7 +57,7 @@ namespace UnpackMiColorFace.FaceFileV3
                 },
                 0x07 => new FaceWidgetImage()
                 {
-                    Name = $"{sectionId:X2}_img_battCN2",
+                    Name = $"{sectionId:X2}_img_battCN2{colorPostFix}",
                     Bitmap = imageNameList[0],
                     X = posX,
                     Y = posY,
@@ -61,7 +67,7 @@ namespace UnpackMiColorFace.FaceFileV3
                 },
                 0x09 => new FaceWidgetDigitalNum()
                 {
-                    Name = $"{sectionId:X2}_num_batt",
+                    Name = $"{sectionId:X2}_num_batt{colorPostFix}",
                     BitmapList = string.Join("|", imageNameList.Append(imageNameList[0])),
                     X = posX,
                     Y = posY,
@@ -74,7 +80,7 @@ namespace UnpackMiColorFace.FaceFileV3
                 },
                 0x0A => new FaceWidgetImage()
                 {
-                    Name = $"{sectionId:X2}_delim",
+                    Name = $"{sectionId:X2}_delim{colorPostFix}",
                     Bitmap = imageNameList[0],
                     X = posX,
                     Y = posY,
@@ -84,7 +90,7 @@ namespace UnpackMiColorFace.FaceFileV3
                 },
                 0x0D => new FaceWidgetDigitalNum()
                 {
-                    Name = $"{sectionId:X2}_num_month",
+                    Name = $"{sectionId:X2}_num_month{colorPostFix}",
                     BitmapList = string.Join("|", imageNameList.Append(imageNameList[0])),
                     X = posX,
                     Y = posY,
@@ -96,7 +102,7 @@ namespace UnpackMiColorFace.FaceFileV3
                 },
                 0x0E => new FaceWidgetImage()
                 {
-                    Name = $"{sectionId:X2}_delim",
+                    Name = $"{sectionId:X2}_delim{colorPostFix}",
                     Bitmap = imageNameList[0],
                     X = posX,
                     Y = posY,
@@ -106,7 +112,7 @@ namespace UnpackMiColorFace.FaceFileV3
                 },
                 0x0F => new FaceWidgetDigitalNum()
                 {
-                    Name = $"{sectionId:X2}_num_day",
+                    Name = $"{sectionId:X2}_num_day{colorPostFix}",
                     BitmapList = string.Join("|", imageNameList.Append(imageNameList[0])),
                     X = posX,
                     Y = posY,
@@ -154,7 +160,7 @@ namespace UnpackMiColorFace.FaceFileV3
                 },
                 0x13 => new FaceWidgetImageList()
                 {
-                    Name = $"{sectionId:X2}_imgList_AMPM-CN1",
+                    Name = $"{sectionId:X2}_imgList_AMPM-CN1{colorPostFix}",
                     BitmapList = imageNameList.Aggregate("", (final, next) => final + (final.Length > 0 ? "|" : "") + $"({numIndex += 1}):{next}"),
                     X = posX,
                     Y = posY,
@@ -166,7 +172,7 @@ namespace UnpackMiColorFace.FaceFileV3
                 },
                 0x14 => new FaceWidgetImageList()
                 {
-                    Name = $"{sectionId:X2}_imgList_AMPM-EN",
+                    Name = $"{sectionId:X2}_imgList_AMPM-EN{colorPostFix}",
                     BitmapList = imageNameList.Aggregate("", (final, next) => final + (final.Length > 0 ? "|" : "") + $"({numIndex += 1}):{next}"),
                     X = posX,
                     Y = posY,
@@ -178,7 +184,7 @@ namespace UnpackMiColorFace.FaceFileV3
                 },
                 0x15 => new FaceWidgetImageList()
                 {
-                    Name = $"{sectionId:X2}_imgList_AMPM-CN2",
+                    Name = $"{sectionId:X2}_imgList_AMPM-CN2{colorPostFix}",
                     BitmapList = imageNameList.Aggregate("", (final, next) => final + (final.Length > 0 ? "|" : "") + $"({numIndex += 1}):{next}"),
                     X = posX,
                     Y = posY,
@@ -190,7 +196,7 @@ namespace UnpackMiColorFace.FaceFileV3
                 },
                 0x18 => new FaceWidgetImageList()
                 {
-                    Name = $"{sectionId:X2}_imgList_stepsPercent",
+                    Name = $"{sectionId:X2}_imgList_stepsPercent{colorPostFix}",
                     BitmapList = imageNameList.Aggregate("", (final, next) => final + (final.Length > 0 ? "|" : "") + $"({percentLevel += 10}):{next}"),
                     X = posX,
                     Y = posY,
@@ -202,7 +208,7 @@ namespace UnpackMiColorFace.FaceFileV3
                 },
                 0x19 => new FaceWidgetImage()
                 {
-                    Name = $"{sectionId:X2}_img_stepsCN1",
+                    Name = $"{sectionId:X2}_img_stepsCN1{colorPostFix}",
                     Bitmap = imageNameList[0],
                     X = posX,
                     Y = posY,
@@ -212,7 +218,7 @@ namespace UnpackMiColorFace.FaceFileV3
                 },
                 0x1A => new FaceWidgetImage()
                 {
-                    Name = $"{sectionId:X2}_img_stepsEN",
+                    Name = $"{sectionId:X2}_img_stepsEN{colorPostFix}",
                     Bitmap = imageNameList[0],
                     X = posX,
                     Y = posY,
@@ -222,7 +228,7 @@ namespace UnpackMiColorFace.FaceFileV3
                 },
                 0x1B => new FaceWidgetImage()
                 {
-                    Name = $"{sectionId:X2}_img_stepsCN2",
+                    Name = $"{sectionId:X2}_img_stepsCN2{colorPostFix}",
                     Bitmap = imageNameList[0],
                     X = posX,
                     Y = posY,
@@ -232,7 +238,7 @@ namespace UnpackMiColorFace.FaceFileV3
                 },
                 0x1C => new FaceWidgetDigitalNum()
                 {
-                    Name = $"{sectionId:X2}_num_steps",
+                    Name = $"{sectionId:X2}_num_steps{colorPostFix}",
                     BitmapList = string.Join("|", imageNameList.Append(imageNameList[0])),
                     X = posX,
                     Y = posY,
@@ -245,7 +251,7 @@ namespace UnpackMiColorFace.FaceFileV3
                 },
                 0x23 => new FaceWidgetImageList()
                 {
-                    Name = $"{sectionId:X2}_imgList_calPercent",
+                    Name = $"{sectionId:X2}_imgList_calPercent{colorPostFix}",
                     BitmapList = imageNameList.Aggregate("", (final, next) => final + (final.Length > 0 ? "|" : "") + $"({percentLevel += 10}):{next}"),
                     X = posX,
                     Y = posY,
@@ -257,7 +263,7 @@ namespace UnpackMiColorFace.FaceFileV3
                 },
                 0x24 => new FaceWidgetImage()
                 {
-                    Name = $"{sectionId:X2}_img_calCN1",
+                    Name = $"{sectionId:X2}_img_calCN1{colorPostFix}",
                     Bitmap = imageNameList[0],
                     X = posX,
                     Y = posY,
@@ -267,7 +273,7 @@ namespace UnpackMiColorFace.FaceFileV3
                 },
                 0x25 => new FaceWidgetImage()
                 {
-                    Name = $"{sectionId:X2}_img_calEN",
+                    Name = $"{sectionId:X2}_img_calEN{colorPostFix}",
                     Bitmap = imageNameList[0],
                     X = posX,
                     Y = posY,
@@ -277,7 +283,7 @@ namespace UnpackMiColorFace.FaceFileV3
                 },
                 0x26 => new FaceWidgetImage()
                 {
-                    Name = $"{sectionId:X2}_img_calCN2",
+                    Name = $"{sectionId:X2}_img_calCN2{colorPostFix}",
                     Bitmap = imageNameList[0],
                     X = posX,
                     Y = posY,
@@ -287,7 +293,7 @@ namespace UnpackMiColorFace.FaceFileV3
                 },
                 0x27 => new FaceWidgetDigitalNum()
                 {
-                    Name = $"{sectionId:X2}_num_calories",
+                    Name = $"{sectionId:X2}_num_calories{colorPostFix}",
                     BitmapList = string.Join("|", imageNameList.Append(imageNameList[0])),
                     X = posX,
                     Y = posY,
@@ -300,7 +306,7 @@ namespace UnpackMiColorFace.FaceFileV3
                 },
                 0x31 => new FaceWidgetDigitalNum()
                 {
-                    Name = $"{sectionId:X2}_num_hrm",
+                    Name = $"{sectionId:X2}_num_hrm{colorPostFix}",
                     BitmapList = string.Join("|", imageNameList.Append(imageNameList[0])),
                     X = posX,
                     Y = posY,
@@ -313,7 +319,7 @@ namespace UnpackMiColorFace.FaceFileV3
                 },
                 0x32 => new FaceWidgetImage()
                 {
-                    Name = $"{sectionId:X2}_img_noHrm",
+                    Name = $"{sectionId:X2}_img_noHrm{colorPostFix}",
                     Bitmap = imageNameList[0],
                     X = posX,
                     Y = posY,
@@ -323,7 +329,7 @@ namespace UnpackMiColorFace.FaceFileV3
                 },
                 0x33 => new FaceWidgetImage()
                 {
-                    Name = $"{sectionId:X2}_img_hrmCN1",
+                    Name = $"{sectionId:X2}_img_hrmCN1{colorPostFix}",
                     Bitmap = imageNameList[0],
                     X = posX,
                     Y = posY,
@@ -333,7 +339,7 @@ namespace UnpackMiColorFace.FaceFileV3
                 },
                 0x34 => new FaceWidgetImage()
                 {
-                    Name = $"{sectionId:X2}_img_hrmEN",
+                    Name = $"{sectionId:X2}_img_hrmEN{colorPostFix}",
                     Bitmap = imageNameList[0],
                     X = posX,
                     Y = posY,
@@ -343,7 +349,7 @@ namespace UnpackMiColorFace.FaceFileV3
                 },
                 0x35 => new FaceWidgetImage()
                 {
-                    Name = $"{sectionId:X2}_img_hrmCN2",
+                    Name = $"{sectionId:X2}_img_hrmCN2{colorPostFix}",
                     Bitmap = imageNameList[0],
                     X = posX,
                     Y = posY,
@@ -353,7 +359,7 @@ namespace UnpackMiColorFace.FaceFileV3
                 },
                 0x38 => new FaceWidgetDigitalNum()
                 {
-                    Name = $"{sectionId:X2}_num_hourHigh",
+                    Name = $"{sectionId:X2}_num_hourHigh{colorPostFix}",
                     BitmapList = string.Join("|", imageNameList.Append(imageNameList[0])),
                     X = posX,
                     Y = posY,
@@ -365,7 +371,7 @@ namespace UnpackMiColorFace.FaceFileV3
                 },
                 0x39 => new FaceWidgetDigitalNum()
                 {
-                    Name = $"{sectionId:X2}_num_hourLow",
+                    Name = $"{sectionId:X2}_num_hourLow{colorPostFix}",
                     BitmapList = string.Join("|", imageNameList.Append(imageNameList[0])),
                     X = posX,
                     Y = posY,
@@ -377,7 +383,7 @@ namespace UnpackMiColorFace.FaceFileV3
                 },
                 0x3A => new FaceWidgetImage()
                 {
-                    Name = $"{sectionId:X2}_delim",
+                    Name = $"{sectionId:X2}_delim{colorPostFix}",
                     Bitmap = imageNameList[0],
                     X = posX,
                     Y = posY,
@@ -387,7 +393,7 @@ namespace UnpackMiColorFace.FaceFileV3
                 },
                 0x3B => new FaceWidgetDigitalNum()
                 {
-                    Name = $"{sectionId:X2}_num_minHigh",
+                    Name = $"{sectionId:X2}_num_minHigh{colorPostFix}",
                     BitmapList = string.Join("|", imageNameList.Append(imageNameList[0])),
                     X = posX,
                     Y = posY,
@@ -399,7 +405,7 @@ namespace UnpackMiColorFace.FaceFileV3
                 },
                 0x3C => new FaceWidgetDigitalNum()
                 {
-                    Name = $"{sectionId:X2}_num_minLow",
+                    Name = $"{sectionId:X2}_num_minLow{colorPostFix}",
                     BitmapList = string.Join("|", imageNameList.Append(imageNameList[0])),
                     X = posX,
                     Y = posY,
@@ -411,7 +417,7 @@ namespace UnpackMiColorFace.FaceFileV3
                 },
                 0x3D => new FaceWidgetImage()
                 {
-                    Name = $"{sectionId:X2}_delim",
+                    Name = $"{sectionId:X2}_delim{colorPostFix}",
                     Bitmap = imageNameList[0],
                     X = posX,
                     Y = posY,
@@ -421,7 +427,7 @@ namespace UnpackMiColorFace.FaceFileV3
                 },
                 0x3E => new FaceWidgetDigitalNum()
                 {
-                    Name = $"{sectionId:X2}_num_secHigh",
+                    Name = $"{sectionId:X2}_num_secHigh{colorPostFix}",
                     BitmapList = string.Join("|", imageNameList.Append(imageNameList[0])),
                     X = posX,
                     Y = posY,
@@ -429,11 +435,11 @@ namespace UnpackMiColorFace.FaceFileV3
                     Height = height,
                     Alpha = 0xFF,
                     Digits = 1,
-                    DataSrcValue = FaceItemDataSrc.MinuteLow,
+                    DataSrcValue = FaceItemDataSrc.SecondHigh,
                 },
                 0x3F => new FaceWidgetDigitalNum()
                 {
-                    Name = $"{sectionId:X2}_num_secLow",
+                    Name = $"{sectionId:X2}_num_secLow{colorPostFix}",
                     BitmapList = string.Join("|", imageNameList.Append(imageNameList[0])),
                     X = posX,
                     Y = posY,
@@ -441,11 +447,11 @@ namespace UnpackMiColorFace.FaceFileV3
                     Height = height,
                     Alpha = 0xFF,
                     Digits = 1,
-                    DataSrcValue = FaceItemDataSrc.MinuteLow,
+                    DataSrcValue = FaceItemDataSrc.SecondLow,
                 },
                 0x42 => new FaceWidgetImageList()
                 {
-                    Name = $"{sectionId:X2}_imgList_hour",
+                    Name = $"{sectionId:X2}_imgList_hour{colorPostFix}",
                     BitmapList = imageNameList.Aggregate("", (final, next) => final + (final.Length > 0 ? "|" : "") + $"({numIndex++}):{next}"),
                     X = posX,
                     Y = posY,
@@ -457,7 +463,7 @@ namespace UnpackMiColorFace.FaceFileV3
                 },
                 0x43 => new FaceWidgetImageList()
                 {
-                    Name = $"{sectionId:X2}_imgList_min",
+                    Name = $"{sectionId:X2}_imgList_min{colorPostFix}",
                     BitmapList = imageNameList.Aggregate("", (final, next) => final + (final.Length > 0 ? "|" : "") + $"({numIndex++}):{next}"),
                     X = posX,
                     Y = posY,
@@ -468,7 +474,7 @@ namespace UnpackMiColorFace.FaceFileV3
                 },
                 0x44 => new FaceWidgetImageList()
                 {
-                    Name = $"{sectionId:X2}_imgList_second",
+                    Name = $"{sectionId:X2}_imgList_second{colorPostFix}",
                     BitmapList = imageNameList.Aggregate("", (final, next) => final + (final.Length > 0 ? "|" : "") + $"({numIndex++}):{next}"),
                     X = posX,
                     Y = posY,

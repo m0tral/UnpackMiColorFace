@@ -5,6 +5,6 @@ namespace UnpackMiColorFace.FaceFileV3
 {
     public interface IFaceFileV3Decoder
     {
-        FaceWidget GetWidget(int sectionId, List<string> imageNameList, int posX, int posY, int width, int height);
+        FaceWidget GetWidget(int sectionId, List<string> imageNameList, int posX, int posY, int width, int height, uint color = 0);
     }
 }

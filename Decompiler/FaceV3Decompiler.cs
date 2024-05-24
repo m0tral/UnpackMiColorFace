@@ -344,7 +344,7 @@ namespace UnpackMiColorFace.Decompiler
                     if (imageNameList.Count > 0)
                     {
                         var decoder = FaceFileV3DecoderFactory.GetDecoder(watchType);
-                        faceWidgets.Add(decoder.GetWidget(sectionId, imageNameList, posX, posY, width, height));
+                        faceWidgets.Add(decoder.GetWidget(sectionId, imageNameList, posX, posY, width, height, color >> 8));
                     }
                 }
 
