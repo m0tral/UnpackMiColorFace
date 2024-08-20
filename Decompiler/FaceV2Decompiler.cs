@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using UnpackMiColorFace.Helpers;
 using XiaomiWatch.Common;
+using XiaomiWatch.Common.Compress;
 using XiaomiWatch.Common.FaceFile;
 
 namespace UnpackMiColorFace.Decompiler
@@ -200,28 +201,36 @@ namespace UnpackMiColorFace.Decompiler
             {
                 byte[] cpr = bin.GetByteArray(0xCu + 8, dataLen - 8);
                 type = bin[0x10] & 0x0F;
-                int decLen = (int)bin.GetDWord(0x10) >> 4;
 
-                if (rle == 0x10)
-                    pxls = BmpHelper.UncompressRLEv20(cpr, decLen);
-                else
+                //if (rle == 0x10)
+                //    pxls = BmpHelper.UncompressRLEv20(cpr, decLen);
+                //else
+                //{
+                //    if (watchType == WatchType.RedmiWatch2 || watchType == WatchType.MiBand7Pro)
+                //        pxls = BmpHelper.UncompressRLEv11(cpr, decLen, (byte)type);
+                //    else
+                //        pxls = BmpHelper.UncompressRLEv10(cpr, decLen, (byte)type);
+                //}
+
+                var decompressor = ImageCompressFactory.GetDecompressor(watchType);
+                var decData = decompressor.Decompress(cpr, (int)width, (int)height, bin.GetDWord(0x10));
+
+                switch (rle)
                 {
-                    if (watchType == WatchType.RedmiWatch2 || watchType == WatchType.MiBand7Pro)
-                        pxls = BmpHelper.UncompressRLEv11(cpr, decLen, (byte)type);
-                    else
-                        pxls = BmpHelper.UncompressRLEv10(cpr, decLen, (byte)type);
+                    case 0x10:
+                        pxls = decData.ConvertToRGBA();
+                        type = 4;
+                        break;
+                    case 0x06:
+                        pxls = decData.Rgb565AlphaToRGBA();
+                        type = 4;
+                        break;
                 }
 
-                if (type == 1)
-                {
-                    pxls = pxls.ConvertToRGBA();
-                    type = 4;
-                }
-
-                string binFile = path + "preview_cpr.bin";
+                //binFile = path + "preview_cpr.bin";
                 //File.WriteAllBytes(binFile, cpr);
 
-                binFile = path + "preview_dec.bin";
+                //binFile = path + "preview_dec.bin";
                 //File.WriteAllBytes(binFile, pxls);
             }
 
@@ -1009,20 +1018,35 @@ namespace UnpackMiColorFace.Decompiler
 
                         Console.WriteLine($"got compressed image[{path.GetLastDirectory()}:{idx}]: {dataOfs:X8}, type:{type:X2}, rle:{rle:X2}");
 
-                        if (rle == 0x10)
-                            pxls = BmpHelper.UncompressRLEv20(cpr, decLen);
-                        else
-                        {
-                            if (watchType == WatchType.RedmiWatch2 || watchType == WatchType.MiBand7Pro)
-                                pxls = BmpHelper.UncompressRLEv11(cpr, decLen, (byte)type);
-                            else
-                                pxls = BmpHelper.UncompressRLEv10(cpr, decLen, (byte)type);
-                        }
+                        //if (rle == 0x10)
+                        //    pxls = BmpHelper.UncompressRLEv20(cpr, decLen);
+                        //else
+                        //{
+                        //    if (watchType == WatchType.RedmiWatch2 || watchType == WatchType.MiBand7Pro)
+                        //        pxls = BmpHelper.UncompressRLEv11(cpr, decLen, (byte)type);
+                        //    else
+                        //        pxls = BmpHelper.UncompressRLEv10(cpr, decLen, (byte)type);
+                        //}
 
-                        if (type == 1)
+                        //if (type == 1)
+                        //{
+                        //    pxls = pxls.ConvertToRGBA();
+                        //    type = 4;
+                        //}
+
+                        var decompressor = ImageCompressFactory.GetDecompressor(watchType);
+                        var decData = decompressor.Decompress(cpr, (int)width, (int)height, bin.GetDWord(0x10));
+
+                        switch (rle)
                         {
-                            pxls = pxls.ConvertToRGBA();
-                            type = 4;
+                            case 0x10:
+                                pxls = decData.ConvertToRGBA();
+                                type = 4;
+                                break;
+                            case 0x06:
+                                pxls = decData.Rgb565AlphaToRGBA();
+                                type = 4;
+                                break;
                         }
 
                         //string binFile = path + $"img_{idx:D4}.bin";
@@ -1217,20 +1241,35 @@ namespace UnpackMiColorFace.Decompiler
                             type = bin[startOffset + 4] & 0x0F;
                             int decLen = (int)bin.GetDWord(startOffset + 4) >> 4;
 
-                            if (rle == 0x10)
-                                pxls = BmpHelper.UncompressRLEv20(cpr, decLen);
-                            else
-                            {
-                                if (watchType == WatchType.RedmiWatch2 || watchType == WatchType.MiBand7Pro)
-                                    pxls = BmpHelper.UncompressRLEv11(cpr, decLen, (byte)type);
-                                else
-                                    pxls = BmpHelper.UncompressRLEv10(cpr, decLen, (byte)type);
-                            }
+                            //if (rle == 0x10)
+                            //    pxls = BmpHelper.UncompressRLEv20(cpr, decLen);
+                            //else
+                            //{
+                            //    if (watchType == WatchType.RedmiWatch2 || watchType == WatchType.MiBand7Pro)
+                            //        pxls = BmpHelper.UncompressRLEv11(cpr, decLen, (byte)type);
+                            //    else
+                            //        pxls = BmpHelper.UncompressRLEv10(cpr, decLen, (byte)type);
+                            //}
 
-                            if (type == 1)
+                            //if (type == 1)
+                            //{
+                            //    pxls = pxls.ConvertToRGBA();
+                            //    type = 4;
+                            //}
+
+                            var decompressor = ImageCompressFactory.GetDecompressor(watchType);
+                            var decData = decompressor.Decompress(cpr, width, height, bin.GetDWord(startOffset + 4));
+
+                            switch (rle)
                             {
-                                pxls = pxls.ConvertToRGBA();
-                                type = 4;
+                                case 0x10:
+                                    pxls = decData.ConvertToRGBA();
+                                    type = 4;
+                                    break;
+                                case 0x06:
+                                    pxls = decData.Rgb565AlphaToRGBA();
+                                    type = 4;
+                                    break;
                             }
 
                             pxlsFull = pxls;
